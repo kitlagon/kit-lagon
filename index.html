@@ -849,17 +849,19 @@
 
             <select id="pickup">
 
-              <option value="07h30 - 08h15">
-                7h30 - 8h15
-              </option>
+              <option value="07h30">7h30</option>
+<option value="07h45">7h45</option>
+<option value="08h00">8h00</option>
 
-              <option value="12h45 - 13h30">
-                12h45 - 13h30
-              </option>
+<option value="12h45">12h45</option>
+<option value="13h00">13h00</option>
+<option value="13h15">13h15</option>
+<option value="13h30">13h30</option>
 
-              <option value="17h15 - 18h00">
-                17h15 - 18h00
-              </option>
+<option value="17h15">17h15</option>
+<option value="17h30">17h30</option>
+<option value="17h45">17h45</option>
+<option value="18h00">18h00</option>
 
             </select>
 
@@ -873,17 +875,19 @@
 
             <select id="return-slot">
 
-              <option value="07h30 - 08h15">
-                7h30 - 8h15
-              </option>
+         <option value="07h30">7h30</option>
+<option value="07h45">7h45</option>
+<option value="08h00">8h00</option>
 
-              <option value="12h45 - 13h30">
-                12h45 - 13h30
-              </option>
+<option value="12h45">12h45</option>
+<option value="13h00">13h00</option>
+<option value="13h15">13h15</option>
+<option value="13h30">13h30</option>
 
-              <option value="17h15 - 18h00">
-                17h15 - 18h00
-              </option>
+<option value="17h15">17h15</option>
+<option value="17h30">17h30</option>
+<option value="17h45">17h45</option>
+<option value="18h00">18h00</option>
 
             </select>
 
@@ -1198,64 +1202,63 @@
     let cart = [];
 
 
-    function renderProducts() {
+function renderProducts() {
 
-      const container = document.getElementById("products");
+  const container = document.getElementById("products");
 
-      container.innerHTML = products.map(product => `
+  container.innerHTML = products.map(product => `
 
-        <article class="product">
+    <article class="product">
 
-          <div class="product-image">
-            ${product.icon}
-          </div>
+      <div class="product-image">
+        ${product.icon}
+      </div>
 
-          <div class="product-body">
+      <div class="product-body">
 
-            <div class="product-category">
-              ${product.category}
-            </div>
+        <div class="product-category">
+          ${product.category}
+        </div>
 
-            <h3>
-              ${product.name}
-            </h3>
+        <h3>
+          ${product.name}
+        </h3>
 
-            <p class="product-description">
-              ${product.description}
-            </p>
+        <p class="product-description">
+          ${product.description}
+        </p>
 
-           <div class="price-table">
+        <div class="price-table">
 
-  <div>
-    <small>Votre tarif</small>
-    <strong
-      id="price-${product.id}"
-      class="dynamic-price"
-    >
-      À partir de ${product.prices.long}€
-    </strong>
-  </div>
+          <div>
+            <small>Votre tarif</small>
 
-</div>
-
-            <div class="deposit">
-              Caution : <strong>${product.deposit}€</strong>
-            </div>
-
-            <button
-              class="add-button"
-              onclick="addToCart(${product.id})"
-            >
-              Ajouter au panier
-            </button>
+            <strong id="price-${product.id}">
+              À partir de ${product.prices.long}€
+            </strong>
 
           </div>
 
-        </article>
+        </div>
 
-      `).join("");
+        <div class="deposit">
+          Caution : <strong>${product.deposit}€</strong>
+        </div>
 
-    }
+        <button
+          class="add-button"
+          onclick="addToCart(${product.id})"
+        >
+          Ajouter au panier
+        </button>
+
+      </div>
+
+    </article>
+
+  `).join("");
+
+}
 
 
     function addToCart(id) {
@@ -1348,7 +1351,13 @@
           product => product.id === item.id
         );
 
-        total += product.prices.short * item.quantity;
+        const selection = getSelectedPeriod();
+
+const price = selection
+  ? product.prices[selection.period]
+  : product.prices.long;
+
+total += price * item.quantity;
         deposit += product.deposit * item.quantity;
 
         return `
@@ -1364,13 +1373,17 @@
                 </h4>
 
                 <p>
-                  ${product.prices.short}€ / 1–2 jours
+            ${
+    selection
+      ? `${price}€ / jour`
+      : `À partir de ${product.prices.long}€ / jour`
+  }
                 </p>
 
               </div>
 
               <strong>
-                ${product.prices.short * item.quantity}€
+                ${(price * item.quantity).toFixed(2)}€
               </strong>
 
             </div>
@@ -1454,7 +1467,142 @@
     /* =========================
        RESERVATION
     ========================== */
+function getSelectedPeriod() {
 
+  const start =
+    document.getElementById("start-date-top").value;
+
+  const end =
+    document.getElementById("end-date-top").value;
+
+  if (!start || !end) {
+    return null;
+  }
+
+  const startDate = new Date(start + "T00:00:00");
+  const endDate = new Date(end + "T00:00:00");
+
+  const difference =
+    endDate - startDate;
+
+  const days =
+    Math.ceil(
+      difference / (1000 * 60 * 60 * 24)
+    );
+
+  if (days <= 0) {
+    return null;
+  }
+
+  if (days <= 2) {
+    return {
+      period: "short",
+      days: days
+    };
+  }
+
+  if (days <= 5) {
+    return {
+      period: "medium",
+      days: days
+    };
+  }
+
+  return {
+    period: "long",
+    days: days
+  };
+
+}
+
+
+function updateDisplayedPrices() {
+
+  const selection = getSelectedPeriod();
+
+  products.forEach(product => {
+
+    const priceElement =
+      document.getElementById(`price-${product.id}`);
+
+    if (!priceElement) return;
+
+    if (!selection) {
+
+      priceElement.textContent =
+        `À partir de ${product.prices.long}€`;
+
+      return;
+
+    }
+
+    const price =
+      product.prices[selection.period];
+
+    priceElement.textContent =
+      `${price}€ / jour`;
+
+  });
+
+  updateCart();
+
+}
+
+
+function syncBookingDates() {
+
+  const start =
+    document.getElementById("start-date-top").value;
+
+  const end =
+    document.getElementById("end-date-top").value;
+
+  const oldStart =
+    document.getElementById("start-date");
+
+  const oldEnd =
+    document.getElementById("end-date");
+
+  if (oldStart) {
+    oldStart.value = start;
+  }
+
+  if (oldEnd) {
+    oldEnd.value = end;
+  }
+
+  const message =
+    document.getElementById("booking-top-message");
+
+  const selection =
+    getSelectedPeriod();
+
+  if (!start || !end) {
+
+    message.textContent =
+      "Sélectionnez vos dates pour obtenir les tarifs de votre séjour.";
+
+    updateDisplayedPrices();
+
+    return;
+  }
+
+  if (!selection) {
+
+    message.textContent =
+      "⚠️ La date de retour doit être après la date de début.";
+
+    updateDisplayedPrices();
+
+    return;
+  }
+
+  message.textContent =
+    `✓ Location de ${selection.days} jour(s) — tarifs mis à jour automatiquement.`;
+
+  updateDisplayedPrices();
+
+}
     function prepareBooking() {
 
       const start =
