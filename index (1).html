@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kit Lagon — Location de matériel de plage & snorkeling à Saint-Gilles-les-Bains</title>
+<meta name="description" content="Louez glacière, parasol, kit snorkeling ou caméra 360° étanche à Saint-Gilles-les-Bains, La Réunion. Réservez vos dates, retrait à l'Ermitage.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --lagoon-deep:#0B4F4A;
+    --lagoon-bright:#1B8A82;
+    --sand:#F1E6CE;
+    --sand-light:#FAF5E9;
+    --coral:#E8622E;
+    --ink:#132420;
+    --ink-soft:rgba(19,36,32,0.7);
+    --line:rgba(19,36,32,0.14);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--sand-light);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;}
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;margin:0 0 0.4em 0;letter-spacing:-0.01em;}
+  a{color:inherit;}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 28px;}
+  .skip-link{position:absolute;left:-999px;}
+  .skip-link:focus{left:12px;top:12px;background:var(--sand);padding:8px 14px;border-radius:6px;z-index:20;}
+
+  header{position:sticky;top:0;z-index:10;background:var(--sand-light);border-bottom:1px solid var(--line);}
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0;}
+  .logo{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:600;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink);}
+  .logo-mark{width:26px;height:26px;flex:none;}
+  nav ul{list-style:none;display:flex;gap:26px;margin:0;padding:0;}
+  nav a{text-decoration:none;font-size:0.92rem;color:var(--ink);border-bottom:1px solid transparent;padding-bottom:2px;}
+  nav a:hover{border-color:var(--coral);}
+  .nav-cta{background:var(--coral);color:white;padding:8px 16px;border-radius:100px;text-decoration:none;font-size:0.88rem;font-weight:500;border:none;cursor:pointer;font-family:inherit;position:relative;}
+  .nav-cta .badge{position:absolute;top:-7px;right:-7px;background:var(--ink);color:white;font-size:0.68rem;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;}
+  .menu-toggle{display:none;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--ink);}
+
+  .hero{
+    position:relative;color:var(--sand-light);overflow:hidden;padding:44px 0;
+    background-image:linear-gradient(160deg, rgba(11,79,74,0.90) 0%, rgba(27,138,130,0.82) 100%), url('images/hero.jpg');
+    background-size:cover;background-position:center;background-repeat:no-repeat;
+  }
+  .hero .wrap{display:grid;grid-template-columns:1.2fr 0.8fr;gap:28px;align-items:center;}
+  .hero-eyebrow{font-size:0.82rem;color:var(--sand);opacity:0.85;margin-bottom:10px;}
+  .hero h1{font-size:clamp(1.5rem,2.6vw,2.1rem);line-height:1.12;color:white;max-width:16ch;}
+  .hero p{font-size:0.95rem;max-width:44ch;color:rgba(255,255,255,0.88);margin-top:10px;}
+  .hero-actions{display:flex;gap:12px;margin-top:18px;flex-wrap:wrap;}
+  .btn{display:inline-block;padding:11px 22px;border-radius:100px;text-decoration:none;font-weight:500;font-size:0.9rem;border:none;cursor:pointer;font-family:inherit;}
+  .btn-primary{background:var(--coral);color:white;}
+  .btn-ghost{border:1px solid rgba(255,255,255,0.55);color:white;background:none;}
+  .hero-steps{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:14px;padding:18px 20px;}
+  .hero-steps-title{font-size:0.76rem;color:rgba(255,255,255,0.75);margin-bottom:12px;}
+  .hero-step{display:flex;gap:12px;align-items:flex-start;padding:9px 0;}
+  .hero-step:not(:last-child){border-bottom:1px solid rgba(255,255,255,0.14);}
+  .hero-step-index{
+    width:22px;height:22px;border-radius:50%;background:var(--coral);color:white;
+    display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:600;flex:none;
+  }
+  .hero-step-text strong{display:block;font-size:0.88rem;font-weight:500;color:white;}
+  .hero-step-text span{font-size:0.78rem;color:rgba(255,255,255,0.72);}
+
+  section{padding:60px 0;}
+  .section-head{max-width:56ch;margin-bottom:36px;}
+  .section-head h2{font-size:clamp(1.5rem,2.6vw,1.9rem);}
+  .section-head p{color:var(--ink-soft);margin-top:8px;font-size:0.95rem;}
+  .step-tag{font-size:0.78rem;color:var(--lagoon-bright);font-weight:600;letter-spacing:0.03em;margin-bottom:6px;}
+
+  #dates{background:var(--sand);}
+  .booking-panel{background:var(--sand-light);border:1px solid var(--line);border-radius:16px;padding:24px 28px;max-width:480px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:0.84rem;color:var(--ink-soft);margin-bottom:6px;}
+  .field input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:0.92rem;background:white;color:var(--ink);}
+  .date-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .dates-hint{font-size:0.82rem;color:var(--lagoon-deep);margin-top:2px;}
+
+  .calendar-widget{max-width:340px;}
+  .calendar-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .calendar-header span{font-family:'Fraunces',serif;font-size:1rem;font-weight:500;text-transform:capitalize;}
+  .calendar-header button{
+    background:var(--sand);border:none;width:30px;height:30px;border-radius:50%;
+    font-size:1rem;cursor:pointer;color:var(--ink);
+  }
+  .calendar-header button:disabled{opacity:0.3;cursor:not-allowed;}
+  .calendar-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:0.74rem;color:var(--ink-soft);margin-bottom:4px;}
+  .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+  .cal-day{
+    aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+    border:none;background:none;border-radius:8px;font-size:0.86rem;cursor:pointer;color:var(--ink);font-family:inherit;
+  }
+  .cal-day:hover:not(:disabled):not(.cal-empty){background:var(--sand);}
+  .cal-day:disabled{color:var(--ink-soft);opacity:0.35;cursor:not-allowed;}
+  .cal-day.cal-empty{cursor:default;}
+  .cal-day.cal-selected{background:var(--coral);color:white;font-weight:500;}
+  .cal-day.cal-in-range{background:rgba(232,98,46,0.16);}
+  .cal-day.cal-today{box-shadow:inset 0 0 0 1px var(--lagoon-bright);}
+
+  .dates-selected{display:flex;gap:24px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line);}
+  .dates-selected div strong{display:block;font-size:0.76rem;color:var(--ink-soft);font-weight:500;margin-bottom:2px;}
+  .dates-selected div span{font-size:0.92rem;}
+
+
+  .cat-group{margin-bottom:36px;}
+  .cat-group-title{font-family:'Fraunces',serif;font-size:1.15rem;font-weight:500;padding:12px 0;border-top:1px solid var(--ink);margin-bottom:16px;}
+  .product-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .product-card{background:var(--sand-light);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:8px;overflow:hidden;}
+  .product-image{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;background:var(--sand);display:block;}
+  .product-name{font-weight:500;font-size:0.96rem;}
+  .product-desc{color:var(--ink-soft);font-size:0.84rem;margin:0;min-height:2.4em;}
+  .product-price{margin-top:auto;}
+  .product-price .from{font-size:0.76rem;color:var(--ink-soft);display:block;}
+  .product-price .amount{font-family:'Fraunces',serif;font-size:1.35rem;color:var(--lagoon-deep);}
+  .product-price .unit{font-size:0.8rem;color:var(--ink-soft);}
+  .product-price .total-line{font-size:0.78rem;color:var(--lagoon-deep);font-weight:500;margin-top:2px;}
+  .product-caution{font-size:0.76rem;color:var(--coral);}
+  .qty-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px;}
+  .qty-control{display:flex;align-items:center;border:1px solid var(--line);border-radius:100px;overflow:hidden;}
+  .qty-control button{background:none;border:none;width:30px;height:30px;font-size:1.05rem;cursor:pointer;color:var(--ink);}
+  .qty-control span{min-width:20px;text-align:center;font-size:0.88rem;}
+  .add-btn{background:var(--ink);color:white;border:none;border-radius:100px;padding:8px 14px;font-size:0.82rem;cursor:pointer;font-family:inherit;white-space:nowrap;}
+  .add-btn[disabled]{background:var(--lagoon-bright);}
+
+  .cart-bar{
+    position:sticky;bottom:18px;display:flex;justify-content:center;margin-top:8px;z-index:5;
+  }
+  .cart-bar-inner{
+    background:var(--ink);color:white;border-radius:100px;padding:12px 10px 12px 22px;
+    display:flex;align-items:center;gap:16px;box-shadow:0 8px 24px rgba(0,0,0,0.18);
+  }
+  .cart-bar-text{font-size:0.9rem;}
+  .cart-bar-text strong{color:var(--coral);}
+  .cart-bar .btn-primary{padding:9px 20px;font-size:0.86rem;}
+
+  #modalites{background:var(--sand);}
+  .info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;}
+  .info-card{border-top:2px solid var(--lagoon-bright);padding-top:14px;}
+  .info-card h3{font-size:1rem;margin-bottom:8px;}
+  .info-card p{color:var(--ink-soft);font-size:0.92rem;margin:0;}
+
+  footer{border-top:1px solid var(--line);padding:36px 0;}
+  .footer-grid{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:24px;}
+  .footer-grid .logo{margin-bottom:6px;}
+  footer p{color:var(--ink-soft);font-size:0.84rem;margin:4px 0;}
+  footer a.mail{color:var(--lagoon-deep);text-decoration:underline;}
+
+  @media (max-width:860px){
+    .hero .wrap{grid-template-columns:1fr;}
+    .product-grid{grid-template-columns:1fr 1fr;}
+    .info-grid{grid-template-columns:1fr;}
+    .date-row{grid-template-columns:1fr;}
+    nav ul{display:none;}
+    .menu-toggle{display:block;}
+  }
+  @media (max-width:560px){
+    .product-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Aller au contenu</a>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="#main">
+      <svg class="logo-mark" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="14" cy="14" r="13" stroke="#0B4F4A" stroke-width="1.6"/>
+        <path d="M4 15c2.5 2 5 2 7.5 0s5-2 7.5 0 5 2 7.5 0" stroke="#1B8A82" stroke-width="1.6" fill="none"/>
+        <path d="M4 19c2.5 2 5 2 7.5 0s5-2 7.5 0 5 2 7.5 0" stroke="#E8622E" stroke-width="1.4" fill="none" opacity="0.8"/>
+      </svg>
+      Kit Lagon
+    </a>
+    <nav aria-label="Navigation principale">
+      <ul>
+        <li><a href="#dates">Réserver</a></li>
+        <li><a href="#catalogue">Nos kits</a></li>
+        <li><a href="#modalites">Modalités</a></li>
+      </ul>
+    </nav>
+    <button class="nav-cta" id="nav-cart-btn">
+      Panier <span class="badge" id="nav-badge" style="display:none;">0</span>
+    </button>
+    <button class="menu-toggle" aria-label="Ouvrir le menu">☰</button>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <p class="hero-eyebrow">Saint-Gilles-les-Bains · La Réunion</p>
+        <h1>Le lagon vous attend, pas besoin de tout apporter</h1>
+        <p>Glacière, parasol, kit snorkeling ou caméra 360° étanche : choisissez vos dates et votre matériel, récupérez-le sur un créneau fixe près de la plage.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#dates">Réserver</a>
+          <a class="btn btn-ghost" href="#catalogue">Voir les kits</a>
+        </div>
+      </div>
+      <div class="hero-steps">
+        <p class="hero-steps-title">Comment ça marche</p>
+        <div class="hero-step">
+          <div class="hero-step-index">1</div>
+          <div class="hero-step-text"><strong>Choisissez la date</strong><span>Retrait et retour du matériel</span></div>
+        </div>
+        <div class="hero-step">
+          <div class="hero-step-index">2</div>
+          <div class="hero-step-text"><strong>Choix du matériel</strong><span>Ajoutez vos kits au panier</span></div>
+        </div>
+        <div class="hero-step">
+          <div class="hero-step-index">3</div>
+          <div class="hero-step-text"><strong>Récupération</strong><span>Sur votre créneau, à l'Ermitage</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="dates">
+    <div class="wrap">
+      <p class="step-tag">Étape 1</p>
+      <div class="section-head">
+        <h2>Choisissez vos dates</h2>
+        <p>Cliquez d'abord votre date de retrait, puis votre date de retour — le calendrier reste ouvert.</p>
+      </div>
+      <div class="booking-panel">
+        <div class="calendar-widget">
+          <div class="calendar-header">
+            <button type="button" id="cal-prev" aria-label="Mois précédent">‹</button>
+            <span id="cal-month-label"></span>
+            <button type="button" id="cal-next" aria-label="Mois suivant">›</button>
+          </div>
+          <div class="calendar-weekdays">
+            <span>Lu</span><span>Ma</span><span>Me</span><span>Je</span><span>Ve</span><span>Sa</span><span>Di</span>
+          </div>
+          <div class="calendar-grid" id="cal-grid"></div>
+        </div>
+        <div class="dates-selected">
+          <div><strong>Retrait</strong><span id="label-retrait">à choisir</span></div>
+          <div><strong>Retour</strong><span id="label-retour">à choisir</span></div>
+        </div>
+        <input type="hidden" id="date-retrait">
+        <input type="hidden" id="date-retour">
+        <p class="dates-hint" id="dates-hint"></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="catalogue" style="background:var(--sand);">
+    <div class="wrap">
+      <p class="step-tag">Étape 2</p>
+      <div class="section-head">
+        <h2>Choisissez votre matériel</h2>
+        <p>Caution prise par carte (pré-autorisation) à la remise du matériel.</p>
+      </div>
+      <div id="catalogue-groups"></div>
+    </div>
+    <div class="wrap cart-bar" id="cart-bar" style="display:none;">
+      <div class="cart-bar-inner">
+        <span class="cart-bar-text"><strong id="cart-bar-count">0</strong> article(s) · <span id="cart-bar-total"></span></span>
+        <button class="btn btn-primary" id="cart-bar-btn">Voir mon panier</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="modalites">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Modalités pratiques</h2>
+      </div>
+      <div class="info-grid">
+        <div class="info-card">
+          <h3>Retrait & livraison</h3>
+          <p>Retrait à l'Ermitage, à 5 minutes à pied de la plage de Saint-Gilles. Livraison possible selon créneau et disponibilité.</p>
+        </div>
+        <div class="info-card">
+          <h3>Annulation</h3>
+          <p>Remboursement intégral si annulation plus de 72h avant, 50% entre 72h et 24h, aucun remboursement en dessous de 24h.</p>
+        </div>
+        <div class="info-card">
+          <h3>Modification</h3>
+          <p>Changement de date sans frais si la nouvelle réservation est de même durée.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap footer-grid">
+    <div>
+      <div class="logo">Kit Lagon</div>
+      <p>Location de matériel de plage et de snorkeling — Saint-Gilles-les-Bains, La Réunion.</p>
+    </div>
+    <div>
+      <p><a class="mail" href="mailto:contact@kitlagon.re">contact@kitlagon.re</a></p>
+      <p>© 2026 Kit Lagon</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+  var catalogue = [
+    { group: "Pack plage", note: "sans réservation d'emplacement", items: [
+      { id: "glaciere", name: "Glacière + pain de glace", desc: "Pour garder boissons et pique-nique au frais.", prices: [7, 5.5, 4], caution: 50 },
+      { id: "parasol", name: "Parasol + pied", desc: "Pour s'abriter du soleil, à installer vous-même.", prices: [6, 4.5, 3], caution: 30 }
+    ]},
+    { group: "Snorkeling", note: "masque, tuba, palmes", items: [
+      { id: "pmt", name: "Kit PMT", desc: "Palmes, masque et tuba classiques.", prices: [17, 15, 13], caution: 80 },
+      { id: "palme-easy", name: "Palmes + masque Easybreath", desc: "Masque facial intégral et palmes réglables.", prices: [17, 15, 13], caution: 80 },
+      { id: "masque-tuba", name: "Masque + tuba", desc: "Le duo simple pour explorer le lagon.", prices: [10, 9, 8], caution: 40 },
+      { id: "easybreath", name: "Masque Easybreath seul", desc: "Vision panoramique, respiration par le nez et la bouche.", prices: [10, 9, 8], caution: 40 },
+      { id: "palmes", name: "Palmes seules", desc: "Réglables, pour tous les pieds.", prices: [9, 8, 7], caution: 40 }
+    ]},
+    { group: "Caméra 360° étanche", note: "seule ou avec kit snorkeling", items: [
+      { id: "cam360", name: "Caméra 360° + accessoires aquatiques", desc: "Perche, flotteur et carte mémoire fournis.", prices: [37, 34, 30], caution: 450 },
+      { id: "pmt-cam", name: "Kit PMT + caméra", desc: "Le kit snorkeling complet avec caméra embarquée.", prices: [50, 43, 35], caution: 500 },
+      { id: "easy-cam", name: "Palmes + Easybreath + caméra", desc: "Confort du masque intégral avec caméra 360°.", prices: [50, 43, 35], caution: 500 }
+    ]}
+  ];
+
+  var cart = {};
+
+  function findItem(id){
+    for (var g = 0; g < catalogue.length; g++){
+      for (var i = 0; i < catalogue[g].items.length; i++){
+        if (catalogue[g].items[i].id === id) return catalogue[g].items[i];
+      }
+    }
+    return null;
+  }
+
+  function getDays(){
+    var retraitVal = document.getElementById("date-retrait").value;
+    var retourVal = document.getElementById("date-retour").value;
+    if (!retraitVal || !retourVal) return null;
+    var retrait = new Date(retraitVal);
+    var retour = new Date(retourVal);
+    var diff = Math.round((retour - retrait) / (1000 * 60 * 60 * 24));
+    if (diff <= 0) return null;
+    return diff;
+  }
+
+  function getTierIndex(days){
+    if (days === null) return null;
+    if (days <= 2) return 0;
+    if (days <= 5) return 1;
+    return 2;
+  }
+
+  function updateDatesHint(days){
+    var hint = document.getElementById("dates-hint");
+    if (days === null){
+      hint.textContent = "Choisissez vos deux dates pour voir le tarif exact de chaque kit.";
+    } else {
+      hint.textContent = "Séjour de " + days + " jour" + (days > 1 ? "s" : "") + " — tarifs recalculés ci-dessous.";
+    }
+  }
+
+  function renderCatalogue(){
+    var days = getDays();
+    var tierIndex = getTierIndex(days);
+    updateDatesHint(days);
+
+    var root = document.getElementById("catalogue-groups");
+    var html = "";
+    for (var g = 0; g < catalogue.length; g++){
+      var group = catalogue[g];
+      html += '<div class="cat-group"><div class="cat-group-title">' + group.group +
+        ' <span style="font-family:\'Work Sans\',sans-serif;font-size:0.78rem;color:var(--ink-soft);font-weight:400;">— ' + group.note + '</span></div><div class="product-grid">';
+      for (var i = 0; i < group.items.length; i++){
+        var item = group.items[i];
+        var qty = cart[item.id] || 0;
+        var priceBlock;
+        if (tierIndex === null){
+          priceBlock = '<span class="from">à partir de</span><span class="amount">' + item.prices[2] + ' €</span><span class="unit">/jour</span>';
+        } else {
+          var unitPrice = item.prices[tierIndex];
+          var total = Math.round(unitPrice * days * 100) / 100;
+          priceBlock = '<span class="from">pour ' + days + ' jour' + (days > 1 ? "s" : "") + '</span><span class="amount">' + unitPrice + ' €</span><span class="unit">/jour</span>' +
+            '<div class="total-line">soit ' + total + ' € au total</div>';
+        }
+        html += '<div class="product-card" data-id="' + item.id + '">' +
+          '<img class="product-image" src="images/kits/' + item.id + '.jpg" alt="' + item.name + '" onerror="this.remove()">' +
+          '<div class="product-name">' + item.name + '</div>' +
+          '<p class="product-desc">' + item.desc + '</p>' +
+          '<div class="product-price">' + priceBlock + '</div>' +
+          '<div class="product-caution">Caution ' + item.caution + ' €</div>' +
+          '<div class="qty-row">' +
+            '<div class="qty-control">' +
+              '<button type="button" aria-label="Retirer" data-action="dec" data-id="' + item.id + '">−</button>' +
+              '<span id="qty-' + item.id + '">' + qty + '</span>' +
+              '<button type="button" aria-label="Ajouter" data-action="inc" data-id="' + item.id + '">+</button>' +
+            '</div>' +
+            '<button type="button" class="add-btn" data-action="inc" data-id="' + item.id + '">' + (qty > 0 ? "Dans le panier" : "Ajouter au panier") + '</button>' +
+          '</div>' +
+        '</div>';
+      }
+      html += '</div></div>';
+    }
+    root.innerHTML = html;
+  }
+
+  function changeQty(id, delta){
+    var current = cart[id] || 0;
+    var next = Math.max(0, current + delta);
+    if (next === 0) delete cart[id]; else cart[id] = next;
+    renderCatalogue();
+    renderCartBar();
+  }
+
+  document.getElementById("catalogue-groups").addEventListener("click", function (e) {
+    var target = e.target.closest("[data-action]");
+    if (!target) return;
+    var id = target.getAttribute("data-id");
+    var action = target.getAttribute("data-action");
+    changeQty(id, action === "inc" ? 1 : -1);
+  });
+
+  function cartTotal(){
+    var days = getDays();
+    var tierIndex = getTierIndex(days);
+    var total = 0;
+    var count = 0;
+    var ids = Object.keys(cart);
+    for (var k = 0; k < ids.length; k++){
+      var item = findItem(ids[k]);
+      var qty = cart[ids[k]];
+      count += qty;
+      var unit = tierIndex === null ? item.prices[2] : item.prices[tierIndex];
+      var mult = tierIndex === null ? 1 : days;
+      total += unit * mult * qty;
+    }
+    return { count: count, total: Math.round(total * 100) / 100, hasDays: tierIndex !== null };
+  }
+
+  function renderCartBar(){
+    var bar = document.getElementById("cart-bar");
+    var t = cartTotal();
+    var navBadge = document.getElementById("nav-badge");
+
+    if (t.count > 0){
+      navBadge.style.display = "flex";
+      navBadge.textContent = t.count;
+      bar.style.display = "flex";
+      document.getElementById("cart-bar-count").textContent = t.count;
+      document.getElementById("cart-bar-total").textContent = t.hasDays ? ("total " + t.total + " €") : ("dès " + t.total + " €/j");
+    } else {
+      navBadge.style.display = "none";
+      bar.style.display = "none";
+    }
+  }
+
+  function goToCart(){
+    var ids = Object.keys(cart);
+    if (ids.length === 0) return;
+    var itemsParam = ids.map(function (id) { return id + ":" + cart[id]; }).join(",");
+    var retrait = document.getElementById("date-retrait").value;
+    var retour = document.getElementById("date-retour").value;
+    var params = new URLSearchParams();
+    params.set("items", itemsParam);
+    if (retrait) params.set("retrait", retrait);
+    if (retour) params.set("retour", retour);
+    window.location.href = "panier.html?" + params.toString();
+  }
+
+  document.getElementById("nav-cart-btn").addEventListener("click", goToCart);
+  document.getElementById("cart-bar-btn").addEventListener("click", goToCart);
+
+  function todayISO(){
+    var now = new Date();
+    var m = String(now.getMonth() + 1).padStart(2, "0");
+    var d = String(now.getDate()).padStart(2, "0");
+    return now.getFullYear() + "-" + m + "-" + d;
+  }
+
+  var retraitInput = document.getElementById("date-retrait");
+  var retourInput = document.getElementById("date-retour");
+  var todayStr = todayISO();
+  var selRetrait = null;
+  var selRetour = null;
+  var calMonth = new Date();
+  calMonth.setDate(1);
+
+  var MOIS_FR = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+
+  function isoOf(y, m, d){
+    return y + "-" + String(m + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+  }
+
+  function formatLabel(iso){
+    if (!iso) return "à choisir";
+    var parts = iso.split("-");
+    var d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+  }
+
+  function renderCalendar(){
+    var y = calMonth.getFullYear();
+    var m = calMonth.getMonth();
+    document.getElementById("cal-month-label").textContent = MOIS_FR[m] + " " + y;
+
+    var currentMonthStr = todayStr.slice(0, 7);
+    var displayedMonthStr = y + "-" + String(m + 1).padStart(2, "0");
+    document.getElementById("cal-prev").disabled = displayedMonthStr <= currentMonthStr;
+
+    var firstDay = new Date(y, m, 1).getDay();
+    var offset = firstDay === 0 ? 6 : firstDay - 1;
+    var daysInMonth = new Date(y, m + 1, 0).getDate();
+
+    var html = "";
+    for (var e = 0; e < offset; e++) html += '<span class="cal-day cal-empty"></span>';
+
+    for (var d = 1; d <= daysInMonth; d++){
+      var iso = isoOf(y, m, d);
+      var disabled = iso < todayStr;
+      var classes = "cal-day";
+      if (iso === todayStr) classes += " cal-today";
+      if (iso === selRetrait || iso === selRetour) classes += " cal-selected";
+      else if (selRetrait && selRetour && iso > selRetrait && iso < selRetour) classes += " cal-in-range";
+      html += '<button type="button" class="' + classes + '" data-iso="' + iso + '"' + (disabled ? " disabled" : "") + '>' + d + '</button>';
+    }
+    document.getElementById("cal-grid").innerHTML = html;
+  }
+
+  function updateSelection(){
+    retraitInput.value = selRetrait || "";
+    retourInput.value = selRetour || "";
+    document.getElementById("label-retrait").textContent = formatLabel(selRetrait);
+    document.getElementById("label-retour").textContent = formatLabel(selRetour);
+    renderCatalogue();
+    renderCartBar();
+    renderCalendar();
+  }
+
+  document.getElementById("cal-grid").addEventListener("click", function (e) {
+    var btn = e.target.closest(".cal-day[data-iso]");
+    if (!btn || btn.disabled) return;
+    var iso = btn.getAttribute("data-iso");
+
+    if (!selRetrait || (selRetrait && selRetour)){
+      selRetrait = iso;
+      selRetour = null;
+    } else if (iso > selRetrait){
+      selRetour = iso;
+    } else {
+      selRetrait = iso;
+      selRetour = null;
+    }
+    updateSelection();
+  });
+
+  document.getElementById("cal-prev").addEventListener("click", function () {
+    calMonth.setMonth(calMonth.getMonth() - 1);
+    renderCalendar();
+  });
+  document.getElementById("cal-next").addEventListener("click", function () {
+    calMonth.setMonth(calMonth.getMonth() + 1);
+    renderCalendar();
+  });
+
+  renderCalendar();
+  renderCatalogue();
+  renderCartBar();
+</script>
+
+</body>
+</html>
