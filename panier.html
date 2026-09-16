@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Votre panier — Kit Lagon</title>
+<meta name="description" content="Récapitulatif de votre réservation Kit Lagon.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --lagoon-deep:#0B4F4A;
+    --lagoon-bright:#1B8A82;
+    --sand:#F1E6CE;
+    --sand-light:#FAF5E9;
+    --coral:#E8622E;
+    --ink:#132420;
+    --ink-soft:rgba(19,36,32,0.7);
+    --line:rgba(19,36,32,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--sand-light);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.55;}
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;margin:0 0 0.4em 0;letter-spacing:-0.01em;}
+  a{color:inherit;}
+  .wrap{max-width:760px;margin:0 auto;padding:0 28px;}
+
+  header{border-bottom:1px solid var(--line);}
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:16px 0;max-width:760px;margin:0 auto;padding-left:28px;padding-right:28px;}
+  .logo{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:600;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink);}
+  .logo-mark{width:26px;height:26px;flex:none;}
+  .back-link{font-size:0.88rem;text-decoration:none;color:var(--ink-soft);}
+  .back-link:hover{color:var(--ink);}
+
+  main{padding:48px 0 80px;}
+  h1{font-size:1.7rem;margin-bottom:6px;}
+  .subtitle{color:var(--ink-soft);font-size:0.95rem;margin-bottom:32px;}
+
+  .dates-summary{
+    display:flex;gap:24px;background:var(--sand);border-radius:12px;padding:16px 20px;margin-bottom:28px;
+    font-size:0.9rem;flex-wrap:wrap;
+  }
+  .dates-summary div strong{display:block;font-size:0.78rem;color:var(--ink-soft);font-weight:500;margin-bottom:2px;}
+
+  .cart-item{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:16px 0;border-bottom:1px solid var(--line);gap:14px;
+  }
+  .cart-item-name{font-weight:500;font-size:0.96rem;}
+  .cart-item-meta{color:var(--ink-soft);font-size:0.82rem;margin-top:3px;}
+  .cart-item-price{text-align:right;white-space:nowrap;font-size:0.94rem;}
+  .cart-item-remove{background:none;border:none;color:var(--coral);cursor:pointer;font-size:0.8rem;text-decoration:underline;font-family:inherit;margin-top:4px;display:block;}
+
+  .cart-total{display:flex;justify-content:space-between;padding-top:18px;font-size:1.1rem;font-weight:500;}
+  .caution-note{font-size:0.82rem;color:var(--coral);margin-top:6px;}
+
+  .contact-panel{background:var(--sand-light);border:1px solid var(--line);border-radius:16px;padding:26px;margin-top:32px;}
+  .contact-panel h3{font-size:1.02rem;margin-bottom:16px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:0.84rem;color:var(--ink-soft);margin-bottom:6px;}
+  .field input, .field textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:0.92rem;background:white;color:var(--ink);}
+
+  .btn{display:inline-block;padding:13px 24px;border-radius:100px;text-decoration:none;font-weight:500;font-size:0.94rem;border:none;cursor:pointer;font-family:inherit;}
+  .btn-primary{background:var(--coral);color:white;}
+  .send-btn{width:100%;text-align:center;margin-top:6px;}
+  .form-note{font-size:0.78rem;color:var(--ink-soft);margin-top:10px;}
+
+  .empty-state{padding:60px 0;text-align:center;color:var(--ink-soft);}
+  .empty-state a{color:var(--coral);text-decoration:underline;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <a class="logo" href="index.html">
+      <svg class="logo-mark" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="14" cy="14" r="13" stroke="#0B4F4A" stroke-width="1.6"/>
+        <path d="M4 15c2.5 2 5 2 7.5 0s5-2 7.5 0 5 2 7.5 0" stroke="#1B8A82" stroke-width="1.6" fill="none"/>
+        <path d="M4 19c2.5 2 5 2 7.5 0s5-2 7.5 0 5 2 7.5 0" stroke="#E8622E" stroke-width="1.4" fill="none" opacity="0.8"/>
+      </svg>
+      Kit Lagon
+    </a>
+    <a class="back-link" href="index.html">← Continuer mes achats</a>
+  </div>
+</header>
+
+<main>
+  <div class="wrap" id="content"></div>
+</main>
+
+<script>
+  var catalogue = [
+    { id: "glaciere", name: "Glacière + pain de glace", prices: [7, 5.5, 4], caution: 50 },
+    { id: "parasol", name: "Parasol + pied", prices: [6, 4.5, 3], caution: 30 },
+    { id: "pmt", name: "Kit PMT", prices: [17, 15, 13], caution: 80 },
+    { id: "palme-easy", name: "Palmes + masque Easybreath", prices: [17, 15, 13], caution: 80 },
+    { id: "masque-tuba", name: "Masque + tuba", prices: [10, 9, 8], caution: 40 },
+    { id: "easybreath", name: "Masque Easybreath seul", prices: [10, 9, 8], caution: 40 },
+    { id: "palmes", name: "Palmes seules", prices: [9, 8, 7], caution: 40 },
+    { id: "cam360", name: "Caméra 360° + accessoires aquatiques", prices: [37, 34, 30], caution: 450 },
+    { id: "pmt-cam", name: "Kit PMT + caméra", prices: [50, 43, 35], caution: 500 },
+    { id: "easy-cam", name: "Palmes + Easybreath + caméra", prices: [50, 43, 35], caution: 500 }
+  ];
+
+  function findItem(id){
+    for (var i = 0; i < catalogue.length; i++){
+      if (catalogue[i].id === id) return catalogue[i];
+    }
+    return null;
+  }
+
+  function getTierIndex(days){
+    if (days === null) return null;
+    if (days <= 2) return 0;
+    if (days <= 5) return 1;
+    return 2;
+  }
+
+  var params = new URLSearchParams(window.location.search);
+  var itemsParam = params.get("items") || "";
+  var retrait = params.get("retrait") || "";
+  var retour = params.get("retour") || "";
+
+  var cart = {};
+  itemsParam.split(",").forEach(function (pair) {
+    if (!pair) return;
+    var parts = pair.split(":");
+    var id = parts[0];
+    var qty = parseInt(parts[1], 10) || 0;
+    if (id && qty > 0 && findItem(id)) cart[id] = qty;
+  });
+
+  var days = null;
+  if (retrait && retour){
+    var d1 = new Date(retrait);
+    var d2 = new Date(retour);
+    var diff = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+    if (diff > 0) days = diff;
+  }
+  var tierIndex = getTierIndex(days);
+
+  function removeFromCart(id){
+    delete cart[id];
+    var newParams = new URLSearchParams();
+    var itemsStr = Object.keys(cart).map(function (k) { return k + ":" + cart[k]; }).join(",");
+    if (itemsStr) newParams.set("items", itemsStr);
+    if (retrait) newParams.set("retrait", retrait);
+    if (retour) newParams.set("retour", retour);
+    window.location.search = newParams.toString();
+  }
+
+  function formatDate(iso){
+    if (!iso) return "à préciser";
+    var d = new Date(iso);
+    return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+  }
+
+  function render(){
+    var content = document.getElementById("content");
+    var ids = Object.keys(cart);
+
+    if (ids.length === 0){
+      content.innerHTML =
+        '<div class="empty-state"><h1>Votre panier est vide</h1>' +
+        '<p>Ajoutez des kits depuis <a href="index.html#catalogue">le catalogue</a>.</p></div>';
+      return;
+    }
+
+    var itemsHtml = "";
+    var total = 0;
+    var totalCaution = 0;
+
+    for (var i = 0; i < ids.length; i++){
+      var item = findItem(ids[i]);
+      var qty = cart[ids[i]];
+      var unit = tierIndex === null ? item.prices[2] : item.prices[tierIndex];
+      var lineTotal = tierIndex === null ? unit * qty : unit * qty * days;
+      total += lineTotal;
+      totalCaution += item.caution * qty;
+
+      var metaText = tierIndex === null
+        ? "Quantité : " + qty + " · dès " + unit + " €/jour (choisissez vos dates pour le tarif exact)"
+        : "Quantité : " + qty + " · " + unit + " €/jour × " + days + " jour" + (days > 1 ? "s" : "");
+
+      itemsHtml += '<div class="cart-item">' +
+        '<div><div class="cart-item-name">' + item.name + '</div>' +
+        '<div class="cart-item-meta">' + metaText + '</div>' +
+        '<button type="button" class="cart-item-remove" data-remove="' + item.id + '">Retirer</button></div>' +
+        '<div class="cart-item-price">' + (Math.round(lineTotal * 100) / 100) + ' €</div>' +
+        '</div>';
+    }
+
+    var datesSummary = '<div class="dates-summary">' +
+      '<div><strong>Retrait</strong>' + formatDate(retrait) + '</div>' +
+      '<div><strong>Retour</strong>' + formatDate(retour) + '</div>' +
+      (days ? '<div><strong>Durée</strong>' + days + ' jour' + (days > 1 ? "s" : "") + '</div>' : '') +
+      '</div>';
+
+    content.innerHTML =
+      '<h1>Votre panier</h1>' +
+      '<p class="subtitle">Vérifiez votre sélection avant d\u2019envoyer votre demande.</p>' +
+      datesSummary +
+      itemsHtml +
+      '<div class="cart-total"><span>Total' + (tierIndex === null ? ' (estimation)' : '') + '</span><span>' + (Math.round(total * 100) / 100) + ' €</span></div>' +
+      '<p class="caution-note">+ ' + totalCaution + ' € de caution (pré-autorisation par carte à la remise)</p>' +
+      '<div class="contact-panel">' +
+        '<h3>Vos coordonnées</h3>' +
+        '<div class="field"><label for="client-nom">Nom</label><input type="text" id="client-nom" placeholder="Votre nom"></div>' +
+        '<div class="field"><label for="client-email">E-mail</label><input type="email" id="client-email" placeholder="vous@exemple.com"></div>' +
+        '<div class="field" style="margin-bottom:0;"><label for="client-message">Message (optionnel)</label><textarea id="client-message" rows="3" placeholder="Précisions, horaire souhaité..."></textarea></div>' +
+        '<button class="btn btn-primary send-btn" id="send-btn">Envoyer la demande de réservation</button>' +
+        '<p class="form-note">Ouvre votre messagerie avec un e-mail pré-rempli vers Kit Lagon. La réservation en ligne avec paiement arrivera dans une prochaine version.</p>' +
+      '</div>';
+
+    content.querySelectorAll("[data-remove]").forEach(function (btn) {
+      btn.addEventListener("click", function () { removeFromCart(btn.getAttribute("data-remove")); });
+    });
+
+    document.getElementById("send-btn").addEventListener("click", function () {
+      var nom = document.getElementById("client-nom").value.trim();
+      var email = document.getElementById("client-email").value.trim();
+      var message = document.getElementById("client-message").value.trim();
+
+      var lines = ids.map(function (id) {
+        var item = findItem(id);
+        var qty = cart[id];
+        var unit = tierIndex === null ? item.prices[2] : item.prices[tierIndex];
+        return "- " + item.name + " x" + qty + " (" + unit + " €/jour, caution " + item.caution + " €)";
+      });
+
+      var bodyParts = [
+        "Bonjour Kit Lagon,",
+        "",
+        "Je souhaite réserver :",
+        lines.join("\n"),
+        "",
+        "Date de retrait : " + (retrait || "à préciser"),
+        "Date de retour : " + (retour || "à préciser"),
+        "",
+        "Nom : " + (nom || "à préciser"),
+        "E-mail : " + (email || "à préciser"),
+        message ? ("Message : " + message) : ""
+      ].filter(Boolean);
+
+      var subject = encodeURIComponent("Demande de réservation Kit Lagon");
+      var body = encodeURIComponent(bodyParts.join("\n"));
+      window.location.href = "mailto:contact@kitlagon.re?subject=" + subject + "&body=" + body;
+    });
+  }
+
+  render();
+</script>
+
+</body>
+</html>
