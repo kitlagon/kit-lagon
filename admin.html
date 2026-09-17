@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin produits — Kit Lagon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --lagoon-deep:#0B4F4A; --lagoon-bright:#1B8A82; --sand:#F1E6CE; --sand-light:#FAF5E9;
+    --coral:#E8622E; --ink:#132420; --ink-soft:rgba(19,36,32,0.7); --line:rgba(19,36,32,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--sand-light);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.5;}
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;margin:0 0 0.4em 0;}
+  .wrap{max-width:760px;margin:0 auto;padding:24px 20px 100px;}
+  header{border-bottom:1px solid var(--line);}
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;max-width:760px;margin:0 auto;}
+  .logo{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:600;color:var(--ink);}
+  .back-link{font-size:0.85rem;color:var(--ink-soft);text-decoration:none;}
+  h1{font-size:1.4rem;}
+  .subtitle{color:var(--ink-soft);font-size:0.9rem;margin-bottom:24px;}
+
+  .panel{background:white;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:18px;}
+  .panel h2{font-size:0.98rem;margin-bottom:12px;}
+  .field{margin-bottom:14px;}
+  .field:last-child{margin-bottom:0;}
+  .field label{display:block;font-size:0.82rem;color:var(--ink-soft);margin-bottom:5px;}
+  .field input, .field textarea{
+    width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:8px;
+    font-family:inherit;font-size:0.9rem;background:white;color:var(--ink);
+  }
+  .help{font-size:0.78rem;color:var(--ink-soft);margin-top:8px;line-height:1.5;}
+  .help a{color:var(--lagoon-deep);}
+
+  .btn{display:inline-block;padding:11px 20px;border-radius:100px;border:none;font-weight:500;font-size:0.88rem;cursor:pointer;font-family:inherit;}
+  .btn-primary{background:var(--coral);color:white;}
+  .btn-secondary{background:var(--sand);color:var(--ink);}
+  .btn-small{padding:6px 12px;font-size:0.78rem;}
+  .btn[disabled]{opacity:0.5;cursor:not-allowed;}
+
+  .status{font-size:0.85rem;margin-top:10px;padding:10px 12px;border-radius:8px;display:none;}
+  .status.show{display:block;}
+  .status.ok{background:rgba(27,138,130,0.12);color:var(--lagoon-deep);}
+  .status.err{background:rgba(232,98,46,0.12);color:var(--coral);}
+
+  #editor{display:none;}
+  .group-block{border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px;}
+  .group-title-row{display:flex;gap:10px;margin-bottom:12px;}
+  .group-title-row input{flex:1;}
+  .item-block{border-top:1px solid var(--line);padding-top:14px;margin-top:14px;}
+  .item-block:first-of-type{border-top:none;margin-top:0;padding-top:0;}
+  .item-id{font-size:0.76rem;color:var(--ink-soft);margin-bottom:8px;}
+  .price-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;}
+  .price-row .field label{font-size:0.72rem;}
+  .item-actions{margin-top:10px;text-align:right;}
+  .add-item-row{margin-top:8px;}
+
+  .sticky-save{
+    position:sticky;bottom:16px;display:flex;justify-content:center;margin-top:20px;
+  }
+  .sticky-save-inner{
+    background:var(--ink);border-radius:100px;padding:8px 8px 8px 20px;
+    display:flex;align-items:center;gap:14px;box-shadow:0 8px 24px rgba(0,0,0,0.2);
+  }
+  .sticky-save-inner span{color:white;font-size:0.86rem;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <span class="logo">Kit Lagon — admin</span>
+    <a class="back-link" href="index.html">← Retour au site</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <h1>Gestion des produits</h1>
+  <p class="subtitle">Modifiez noms, descriptions, tarifs et cautions — sans toucher au code. Les changements sont publiés directement sur le site.</p>
+
+  <div class="panel" id="auth-panel">
+    <h2>Connexion</h2>
+    <div class="field">
+      <label for="gh-token">Jeton d'accès personnel GitHub</label>
+      <input type="password" id="gh-token" placeholder="ghp_... ou github_pat_...">
+    </div>
+    <button class="btn btn-primary" id="load-btn">Charger les produits</button>
+    <p class="help">
+      Ce jeton reste uniquement dans cette page (il n'est jamais enregistré) — vous devrez le recoller à chaque visite.<br>
+      Pour en créer un : GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens →
+      limitez-le au dépôt <strong>kit-lagon</strong>, avec la permission <strong>Contents: Read and write</strong> uniquement.
+    </p>
+    <p class="status" id="auth-status"></p>
+  </div>
+
+  <div id="editor"></div>
+
+  <div class="sticky-save" id="sticky-save" style="display:none;">
+    <div class="sticky-save-inner">
+      <span id="save-status-text">Prêt à enregistrer</span>
+      <button class="btn btn-primary" id="save-btn">Enregistrer sur GitHub</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var REPO_OWNER = "kitlagon";
+  var REPO_NAME = "kit-lagon";
+  var REPO_BRANCH = "main";
+  var FILE_PATH = "products.json";
+
+  var token = "";
+  var currentSha = null;
+  var catalogue = [];
+
+  function b64DecodeUnicode(str){
+    var binary = atob(str.replace(/\n/g, ""));
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new TextDecoder("utf-8").decode(bytes);
+  }
+  function b64EncodeUnicode(str){
+    var bytes = new TextEncoder().encode(str);
+    var binary = "";
+    bytes.forEach(function (b) { binary += String.fromCharCode(b); });
+    return btoa(binary);
+  }
+
+  function showStatus(el, msg, ok){
+    el.textContent = msg;
+    el.className = "status show " + (ok ? "ok" : "err");
+  }
+
+  function slugify(name){
+    return name.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+  }
+
+  function apiHeaders(){
+    return {
+      "Authorization": "Bearer " + token,
+      "Accept": "application/vnd.github+json"
+    };
+  }
+
+  document.getElementById("load-btn").addEventListener("click", function () {
+    token = document.getElementById("gh-token").value.trim();
+    var statusEl = document.getElementById("auth-status");
+    if (!token){
+      showStatus(statusEl, "Merci de coller votre jeton d'accès.", false);
+      return;
+    }
+    var url = "https://api.github.com/repos/" + REPO_OWNER + "/" + REPO_NAME + "/contents/" + FILE_PATH + "?ref=" + REPO_BRANCH;
+    fetch(url, { headers: apiHeaders() })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        currentSha = data.sha;
+        catalogue = JSON.parse(b64DecodeUnicode(data.content));
+        showStatus(statusEl, "Produits chargés.", true);
+        renderEditor();
+        document.getElementById("editor").style.display = "block";
+        document.getElementById("sticky-save").style.display = "flex";
+      })
+      .catch(function (err) {
+        showStatus(statusEl, "Échec du chargement (" + err.message + "). Vérifiez le jeton et ses permissions.", false);
+      });
+  });
+
+  function renderEditor(){
+    var root = document.getElementById("editor");
+    var html = "";
+    catalogue.forEach(function (group, gi) {
+      html += '<div class="panel group-block" data-gi="' + gi + '">';
+      html += '<div class="group-title-row">' +
+        '<div class="field" style="margin-bottom:0;"><label>Nom de la catégorie</label><input type="text" class="group-name" value="' + group.group.replace(/"/g, "&quot;") + '"></div>' +
+        '<div class="field" style="margin-bottom:0;"><label>Sous-titre</label><input type="text" class="group-note" value="' + (group.note || "").replace(/"/g, "&quot;") + '"></div>' +
+        '</div>';
+
+      group.items.forEach(function (item, ii) {
+        html += '<div class="item-block" data-ii="' + ii + '">' +
+          '<div class="item-id">Identifiant technique : ' + item.id + ' (fixe)</div>' +
+          '<div class="field"><label>Nom</label><input type="text" class="item-name" value="' + item.name.replace(/"/g, "&quot;") + '"></div>' +
+          '<div class="field"><label>Description</label><textarea class="item-desc" rows="2">' + item.desc + '</textarea></div>' +
+          '<div class="price-row">' +
+            '<div class="field"><label>1-2 j (€)</label><input type="number" step="0.5" class="item-p0" value="' + item.prices[0] + '"></div>' +
+            '<div class="field"><label>3-5 j (€)</label><input type="number" step="0.5" class="item-p1" value="' + item.prices[1] + '"></div>' +
+            '<div class="field"><label>+5 j (€)</label><input type="number" step="0.5" class="item-p2" value="' + item.prices[2] + '"></div>' +
+            '<div class="field"><label>Caution (€)</label><input type="number" step="1" class="item-caution" value="' + item.caution + '"></div>' +
+          '</div>' +
+          '<div class="item-actions"><button type="button" class="btn btn-secondary btn-small" data-remove-item="' + gi + ':' + ii + '">Supprimer ce produit</button></div>' +
+          '</div>';
+      });
+
+      html += '<div class="add-item-row"><button type="button" class="btn btn-secondary btn-small" data-add-item="' + gi + '">+ Ajouter un produit dans cette catégorie</button></div>';
+      html += '</div>';
+    });
+    root.innerHTML = html;
+  }
+
+  function readEditorIntoCatalogue(){
+    document.querySelectorAll(".group-block").forEach(function (groupEl) {
+      var gi = parseInt(groupEl.getAttribute("data-gi"), 10);
+      catalogue[gi].group = groupEl.querySelector(".group-name").value.trim();
+      catalogue[gi].note = groupEl.querySelector(".group-note").value.trim();
+      groupEl.querySelectorAll(".item-block").forEach(function (itemEl) {
+        var ii = parseInt(itemEl.getAttribute("data-ii"), 10);
+        var item = catalogue[gi].items[ii];
+        item.name = itemEl.querySelector(".item-name").value.trim();
+        item.desc = itemEl.querySelector(".item-desc").value.trim();
+        item.prices = [
+          parseFloat(itemEl.querySelector(".item-p0").value) || 0,
+          parseFloat(itemEl.querySelector(".item-p1").value) || 0,
+          parseFloat(itemEl.querySelector(".item-p2").value) || 0
+        ];
+        item.caution = parseFloat(itemEl.querySelector(".item-caution").value) || 0;
+      });
+    });
+  }
+
+  document.getElementById("editor").addEventListener("click", function (e) {
+    var addBtn = e.target.closest("[data-add-item]");
+    var removeBtn = e.target.closest("[data-remove-item]");
+
+    if (addBtn){
+      readEditorIntoCatalogue();
+      var gi = parseInt(addBtn.getAttribute("data-add-item"), 10);
+      var name = prompt("Nom du nouveau produit :");
+      if (!name) return;
+      var id = slugify(name);
+      catalogue[gi].items.push({ id: id, name: name, desc: "", prices: [0, 0, 0], caution: 0 });
+      renderEditor();
+    }
+
+    if (removeBtn){
+      readEditorIntoCatalogue();
+      var parts = removeBtn.getAttribute("data-remove-item").split(":");
+      var gi2 = parseInt(parts[0], 10), ii2 = parseInt(parts[1], 10);
+      if (confirm("Supprimer ce produit du catalogue ?")){
+        catalogue[gi2].items.splice(ii2, 1);
+        renderEditor();
+      }
+    }
+  });
+
+  document.getElementById("save-btn").addEventListener("click", function () {
+    readEditorIntoCatalogue();
+    var statusText = document.getElementById("save-status-text");
+    statusText.textContent = "Enregistrement...";
+
+    var content = b64EncodeUnicode(JSON.stringify(catalogue, null, 2));
+    var url = "https://api.github.com/repos/" + REPO_OWNER + "/" + REPO_NAME + "/contents/" + FILE_PATH;
+
+    fetch(url, {
+      method: "PUT",
+      headers: Object.assign({ "Content-Type": "application/json" }, apiHeaders()),
+      body: JSON.stringify({
+        message: "Mise à jour produits via admin",
+        content: content,
+        sha: currentSha,
+        branch: REPO_BRANCH
+      })
+    })
+      .then(function (r) {
+        if (!r.ok) return r.json().then(function (e) { throw new Error(e.message || ("HTTP " + r.status)); });
+        return r.json();
+      })
+      .then(function (data) {
+        currentSha = data.content.sha;
+        statusText.textContent = "Enregistré ✓ (en ligne dans 1-2 min)";
+      })
+      .catch(function (err) {
+        statusText.textContent = "Échec : " + err.message;
+      });
+  });
+</script>
+
+</body>
+</html>

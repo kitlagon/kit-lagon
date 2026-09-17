@@ -301,26 +301,9 @@
 </footer>
 
 <script>
-  var catalogue = [
-    { group: "Pack plage", note: "sans réservation d'emplacement", items: [
-      { id: "glaciere", name: "Glacière + pain de glace", desc: "Pour garder boissons et pique-nique au frais.", prices: [7, 5.5, 4], caution: 50 },
-      { id: "parasol", name: "Parasol + pied", desc: "Pour s'abriter du soleil, à installer vous-même.", prices: [6, 4.5, 3], caution: 30 }
-    ]},
-    { group: "Snorkeling", note: "masque, tuba, palmes", items: [
-      { id: "pmt", name: "Kit PMT", desc: "Palmes, masque et tuba classiques.", prices: [17, 13, 10], caution: 80 },
-      { id: "palme-easy", name: "Palmes + masque Easybreath", desc: "Masque facial intégral et palmes réglables.", prices: [17, 13, 10], caution: 80 },
-      { id: "masque-tuba", name: "Masque + tuba", desc: "Le duo simple pour explorer le lagon.", prices: [10, 8, 6], caution: 40 },
-      { id: "easybreath", name: "Masque Easybreath seul", desc: "Vision panoramique, respiration par le nez et la bouche.", prices: [10, 8, 6], caution: 40 },
-      { id: "palmes", name: "Palmes seules", desc: "Réglables, pour tous les pieds.", prices: [9, 7, 5], caution: 40 }
-    ]},
-    { group: "Caméra 360° étanche", note: "seule ou avec kit snorkeling", items: [
-      { id: "cam360", name: "Caméra 360° + accessoires aquatiques", desc: "Perche, flotteur et carte mémoire fournis.", prices: [37, 34, 30], caution: 450 },
-      { id: "pmt-cam", name: "Kit PMT + caméra", desc: "Le kit snorkeling complet avec caméra embarquée.", prices: [50, 43, 35], caution: 500 },
-      { id: "easy-cam", name: "Palmes + Easybreath + caméra", desc: "Confort du masque intégral avec caméra 360°.", prices: [50, 43, 35], caution: 500 }
-    ]}
-  ];
-
+  var catalogue = [];
   var cart = {};
+  var FAMILY_PACK = { id: "pmt", minQty: 4, discount: 0.10 };
 
   function findItem(id){
     for (var g = 0; g < catalogue.length; g++){
@@ -347,6 +330,16 @@
     if (days <= 2) return 0;
     if (days <= 5) return 1;
     return 2;
+  }
+
+  function familyDiscountApplies(id, qty){
+    return id === FAMILY_PACK.id && qty >= FAMILY_PACK.minQty;
+  }
+
+  function lineTotal(id, qty, unitPrice, mult){
+    var raw = unitPrice * mult * qty;
+    if (familyDiscountApplies(id, qty)) raw = raw * (1 - FAMILY_PACK.discount);
+    return Math.round(raw * 100) / 100;
   }
 
   function updateDatesHint(days){
@@ -377,16 +370,18 @@
           priceBlock = '<span class="from">à partir de</span><span class="amount">' + item.prices[2] + ' €</span><span class="unit">/jour</span>';
         } else {
           var unitPrice = item.prices[tierIndex];
-          var total = Math.round(unitPrice * days * 100) / 100;
+          var total = lineTotal(item.id, qty || 1, unitPrice, days);
           priceBlock = '<span class="from">pour ' + days + ' jour' + (days > 1 ? "s" : "") + '</span><span class="amount">' + unitPrice + ' €</span><span class="unit">/jour</span>' +
-            '<div class="total-line">soit ' + total + ' € au total</div>';
+            '<div class="total-line">soit ' + total + ' € au total' + (familyDiscountApplies(item.id, qty) ? ' (pack famille -10% appliqué)' : '') + '</div>';
         }
+        var familyNote = item.id === FAMILY_PACK.id ? '<div class="product-caution" style="color:var(--lagoon-bright);">Pack famille : -10% à partir de 4 kits</div>' : '';
         html += '<div class="product-card" data-id="' + item.id + '">' +
           '<img class="product-image" src="images/kits/' + item.id + '.jpg" alt="' + item.name + '" onerror="this.remove()">' +
           '<div class="product-name">' + item.name + '</div>' +
           '<p class="product-desc">' + item.desc + '</p>' +
           '<div class="product-price">' + priceBlock + '</div>' +
           '<div class="product-caution">Caution ' + item.caution + ' €</div>' +
+          familyNote +
           '<div class="qty-row">' +
             '<div class="qty-control">' +
               '<button type="button" aria-label="Retirer" data-action="dec" data-id="' + item.id + '">−</button>' +
@@ -430,7 +425,7 @@
       count += qty;
       var unit = tierIndex === null ? item.prices[2] : item.prices[tierIndex];
       var mult = tierIndex === null ? 1 : days;
-      total += unit * mult * qty;
+      total += lineTotal(ids[k], qty, unit, mult);
     }
     return { count: count, total: Math.round(total * 100) / 100, hasDays: tierIndex !== null };
   }
@@ -561,8 +556,17 @@
   });
 
   renderCalendar();
-  renderCatalogue();
-  renderCartBar();
+  document.getElementById("catalogue-groups").innerHTML = '<p style="color:var(--ink-soft);">Chargement des kits…</p>';
+  fetch("products.json")
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      catalogue = data;
+      renderCatalogue();
+      renderCartBar();
+    })
+    .catch(function () {
+      document.getElementById("catalogue-groups").innerHTML = '<p style="color:var(--coral);">Impossible de charger les kits pour le moment.</p>';
+    });
 </script>
 
 </body>
