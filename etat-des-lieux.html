@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>État des lieux — Kit Lagon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --lagoon-deep:#0B4F4A; --lagoon-bright:#1B8A82; --sand:#F1E6CE; --sand-light:#FAF5E9;
+    --coral:#E8622E; --ink:#132420; --ink-soft:rgba(19,36,32,0.7); --line:rgba(19,36,32,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--sand-light);color:var(--ink);font-family:'Work Sans',sans-serif;line-height:1.5;}
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;margin:0 0 0.4em 0;}
+  .wrap{max-width:640px;margin:0 auto;padding:24px 20px 80px;}
+  header{border-bottom:1px solid var(--line);background:var(--sand-light);}
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;max-width:640px;margin:0 auto;}
+  .logo{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:600;text-decoration:none;color:var(--ink);}
+  .back-link{font-size:0.85rem;color:var(--ink-soft);text-decoration:none;}
+
+  h1{font-size:1.4rem;}
+  .timestamp{color:var(--ink-soft);font-size:0.9rem;margin-bottom:24px;}
+
+  .panel{background:white;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:18px;}
+  .panel h2{font-size:0.98rem;margin-bottom:14px;}
+  .field{margin-bottom:14px;}
+  .field:last-child{margin-bottom:0;}
+  .field label{display:block;font-size:0.84rem;color:var(--ink-soft);margin-bottom:6px;}
+  .field input[type="text"], .field textarea{
+    width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;
+    font-family:inherit;font-size:0.94rem;background:white;color:var(--ink);
+  }
+  .radio-row{display:flex;gap:20px;}
+  .radio-row label{display:flex;align-items:center;gap:6px;font-size:0.92rem;color:var(--ink);}
+
+  .kit-list{display:flex;flex-direction:column;gap:8px;}
+  .kit-list label{display:flex;align-items:center;gap:8px;font-size:0.92rem;color:var(--ink);}
+
+  .photo-input-btn{
+    display:inline-block;background:var(--ink);color:white;border-radius:100px;
+    padding:11px 20px;font-size:0.9rem;cursor:pointer;text-align:center;
+  }
+  .photo-input-btn input{display:none;}
+  .photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;}
+  .photo-thumb{position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1;}
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .photo-thumb button{
+    position:absolute;top:4px;right:4px;background:rgba(19,36,32,0.75);color:white;border:none;
+    border-radius:50%;width:22px;height:22px;font-size:0.8rem;cursor:pointer;
+  }
+
+  .sig-wrap{border:1px dashed var(--line);border-radius:10px;overflow:hidden;background:var(--sand-light);}
+  canvas#sig-pad{display:block;width:100%;height:180px;touch-action:none;}
+  .sig-actions{display:flex;justify-content:space-between;align-items:center;margin-top:8px;}
+  .sig-actions button{background:none;border:none;color:var(--coral);text-decoration:underline;font-size:0.84rem;cursor:pointer;font-family:inherit;}
+
+  .btn{display:inline-block;padding:13px 24px;border-radius:100px;border:none;font-weight:500;font-size:0.95rem;cursor:pointer;font-family:inherit;}
+  .btn-primary{background:var(--coral);color:white;width:100%;}
+  .error-msg{color:var(--coral);font-size:0.86rem;margin-top:10px;display:none;}
+
+  #print-view{display:none;}
+
+  @media print{
+    header, .panel, .btn-primary, .wrap > p.timestamp{display:none !important;}
+    #print-view{display:block;padding:20px;font-family:'Work Sans',sans-serif;color:#132420;}
+    #print-view h1{font-family:'Fraunces',serif;font-size:1.3rem;margin-bottom:4px;}
+    #print-view .pv-meta{font-size:0.9rem;color:#333;margin-bottom:18px;}
+    #print-view .pv-section{margin-bottom:16px;}
+    #print-view .pv-section h3{font-size:0.95rem;margin-bottom:6px;border-bottom:1px solid #ccc;padding-bottom:4px;}
+    #print-view .pv-photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+    #print-view .pv-photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;}
+    #print-view .pv-sig img{max-width:280px;border:1px solid #ccc;border-radius:6px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <span class="logo">Kit Lagon — outil interne</span>
+    <a class="back-link" href="index.html">← Retour au site</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <h1>État des lieux</h1>
+  <p class="timestamp" id="timestamp"></p>
+
+  <div class="panel">
+    <h2>Type de constat</h2>
+    <div class="radio-row">
+      <label><input type="radio" name="type" value="Remise" checked> Remise du matériel</label>
+      <label><input type="radio" name="type" value="Retour"> Retour du matériel</label>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Client</h2>
+    <div class="field">
+      <label for="nom-client">Nom du client</label>
+      <input type="text" id="nom-client" placeholder="Nom et prénom">
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Kits concernés</h2>
+    <div class="kit-list" id="kit-list"></div>
+  </div>
+
+  <div class="panel">
+    <h2>État / remarques</h2>
+    <div class="field">
+      <textarea id="remarques" rows="3" placeholder="Rayures, usure normale, élément manquant..."></textarea>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Photos horodatées</h2>
+    <label class="photo-input-btn">
+      Prendre / ajouter des photos
+      <input type="file" id="photo-input" accept="image/*" capture="environment" multiple>
+    </label>
+    <div class="photo-grid" id="photo-grid"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Signature du client</h2>
+    <div class="sig-wrap">
+      <canvas id="sig-pad"></canvas>
+    </div>
+    <div class="sig-actions">
+      <button type="button" id="sig-clear">Effacer la signature</button>
+      <span style="font-size:0.8rem;color:var(--ink-soft);">Signer avec le doigt ou la souris</span>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="generate-btn">Générer le document</button>
+  <p class="error-msg" id="error-msg"></p>
+</div>
+
+<div id="print-view"></div>
+
+<script>
+  var KIT_NAMES = [
+    "Glacière + pain de glace", "Parasol + pied", "Kit PMT", "Palmes + masque Easybreath",
+    "Masque + tuba", "Masque Easybreath seul", "Palmes seules",
+    "Caméra 360° + accessoires aquatiques", "Kit PMT + caméra", "Palmes + Easybreath + caméra"
+  ];
+
+  document.getElementById("timestamp").textContent =
+    "Horodatage : " + new Date().toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" });
+
+  var kitList = document.getElementById("kit-list");
+  kitList.innerHTML = KIT_NAMES.map(function (name, i) {
+    return '<label><input type="checkbox" value="' + name + '" id="kit-' + i + '"> ' + name + '</label>';
+  }).join("");
+
+  var photos = [];
+  var photoInput = document.getElementById("photo-input");
+  var photoGrid = document.getElementById("photo-grid");
+
+  photoInput.addEventListener("change", function () {
+    Array.prototype.forEach.call(photoInput.files, function (file) {
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        photos.push(e.target.result);
+        renderPhotos();
+      };
+      reader.readAsDataURL(file);
+    });
+    photoInput.value = "";
+  });
+
+  function renderPhotos(){
+    photoGrid.innerHTML = photos.map(function (src, i) {
+      return '<div class="photo-thumb"><img src="' + src + '"><button type="button" data-idx="' + i + '">×</button></div>';
+    }).join("");
+  }
+
+  photoGrid.addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-idx]");
+    if (!btn) return;
+    photos.splice(parseInt(btn.getAttribute("data-idx"), 10), 1);
+    renderPhotos();
+  });
+
+  var canvas = document.getElementById("sig-pad");
+  var ctx = canvas.getContext("2d");
+  var drawing = false;
+  var hasSignature = false;
+
+  function resizeCanvas(){
+    var ratio = window.devicePixelRatio || 1;
+    var rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * ratio;
+    canvas.height = rect.height * ratio;
+    ctx.scale(ratio, ratio);
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "#132420";
+  }
+  resizeCanvas();
+  window.addEventListener("resize", function () {
+    var data = hasSignature ? canvas.toDataURL() : null;
+    resizeCanvas();
+    if (data){
+      var img = new Image();
+      img.onload = function () { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); };
+      img.src = data;
+    }
+  });
+
+  function pos(e){
+    var rect = canvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+
+  canvas.addEventListener("pointerdown", function (e) {
+    drawing = true;
+    hasSignature = true;
+    var p = pos(e);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+  });
+  canvas.addEventListener("pointermove", function (e) {
+    if (!drawing) return;
+    var p = pos(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  });
+  window.addEventListener("pointerup", function () { drawing = false; });
+
+  document.getElementById("sig-clear").addEventListener("click", function () {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hasSignature = false;
+  });
+
+  document.getElementById("generate-btn").addEventListener("click", function () {
+    var errorEl = document.getElementById("error-msg");
+    var nom = document.getElementById("nom-client").value.trim();
+    var type = document.querySelector('input[name="type"]:checked').value;
+    var remarques = document.getElementById("remarques").value.trim();
+    var kits = KIT_NAMES.filter(function (_, i) {
+      return document.getElementById("kit-" + i).checked;
+    });
+
+    if (!nom || kits.length === 0 || !hasSignature){
+      errorEl.textContent = "Merci de renseigner le nom du client, au moins un kit, et de faire signer le client avant de générer le document.";
+      errorEl.style.display = "block";
+      return;
+    }
+    errorEl.style.display = "none";
+
+    var sigData = canvas.toDataURL("image/png");
+    var now = new Date().toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" });
+
+    var html = '<h1>Kit Lagon — État des lieux (' + type + ')</h1>' +
+      '<p class="pv-meta">Horodatage : ' + now + '</p>' +
+      '<div class="pv-section"><h3>Client</h3><p>' + nom + '</p></div>' +
+      '<div class="pv-section"><h3>Kits concernés</h3><p>' + kits.join(", ") + '</p></div>' +
+      (remarques ? '<div class="pv-section"><h3>État / remarques</h3><p>' + remarques + '</p></div>' : '') +
+      (photos.length ? '<div class="pv-section"><h3>Photos horodatées</h3><div class="pv-photos">' +
+        photos.map(function (src) { return '<img src="' + src + '">'; }).join("") + '</div></div>' : '') +
+      '<div class="pv-section pv-sig"><h3>Signature du client</h3><img src="' + sigData + '"></div>';
+
+    document.getElementById("print-view").innerHTML = html;
+    window.print();
+  });
+</script>
+
+</body>
+</html>
