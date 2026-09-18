@@ -131,18 +131,18 @@
       catalogue = flattenCatalogue(data);
 
       var params = new URLSearchParams(window.location.search);
-      var itemsParam = params.get("items") || "";
       var retrait = params.get("retrait") || "";
       var retour = params.get("retour") || "";
 
-      var cart = {};
-      itemsParam.split(",").forEach(function (pair) {
-        if (!pair) return;
-        var parts = pair.split(":");
-        var id = parts[0];
-        var qty = parseInt(parts[1], 10) || 0;
-        if (id && qty > 0 && findItem(id)) cart[id] = qty;
-      });
+      var lines = [];
+      try {
+        var raw = JSON.parse(params.get("cart") || "[]");
+        raw.forEach(function (l) {
+          if (l && l.id && findItem(l.id) && l.qty > 0){
+            lines.push({ id: l.id, size: l.size || null, qty: l.qty });
+          }
+        });
+      } catch (e) { lines = []; }
 
       var days = null;
       if (retrait && retour){
@@ -153,11 +153,16 @@
       }
       var tierIndex = getTierIndex(days);
 
-      function removeFromCart(id){
-        delete cart[id];
+      function idTotalQty(id){
+        var t = 0;
+        lines.forEach(function (l) { if (l.id === id) t += l.qty; });
+        return t;
+      }
+
+      function removeLine(index){
+        lines.splice(index, 1);
         var newParams = new URLSearchParams();
-        var itemsStr = Object.keys(cart).map(function (k) { return k + ":" + cart[k]; }).join(",");
-        if (itemsStr) newParams.set("items", itemsStr);
+        if (lines.length) newParams.set("cart", JSON.stringify(lines));
         if (retrait) newParams.set("retrait", retrait);
         if (retour) newParams.set("retour", retour);
         window.location.search = newParams.toString();
@@ -171,9 +176,8 @@
 
       function render(){
         var content = document.getElementById("content");
-        var ids = Object.keys(cart);
 
-        if (ids.length === 0){
+        if (lines.length === 0){
           content.innerHTML =
             '<div class="empty-state"><h1>Votre panier est vide</h1>' +
             '<p>Ajoutez des kits depuis <a href="index.html#catalogue">le catalogue</a>.</p></div>';
@@ -184,26 +188,28 @@
         var total = 0;
         var totalCaution = 0;
 
-        for (var i = 0; i < ids.length; i++){
-          var item = findItem(ids[i]);
-          var qty = cart[ids[i]];
+        lines.forEach(function (line, idx) {
+          var item = findItem(line.id);
+          var qty = line.qty;
           var unit = tierIndex === null ? item.prices[2] : item.prices[tierIndex];
           var mult = tierIndex === null ? 1 : days;
-          var itemLineTotal = computeLineTotal(item.id, qty, unit, mult);
+          var itemLineTotal = computeLineTotal(line.id, idTotalQty(line.id), unit, mult) * (qty / idTotalQty(line.id));
+          itemLineTotal = Math.round(itemLineTotal * 100) / 100;
           total += itemLineTotal;
           totalCaution += item.caution * qty;
 
+          var sizeText = line.size ? " · Taille : " + line.size : "";
           var metaText = tierIndex === null
-            ? "Quantité : " + qty + " · dès " + unit + " €/jour (choisissez vos dates pour le tarif exact)"
-            : "Quantité : " + qty + " · " + unit + " €/jour × " + days + " jour" + (days > 1 ? "s" : "") + (familyDiscountApplies(item.id, qty) ? " · pack famille -10%" : "");
+            ? "Quantité : " + qty + sizeText + " · dès " + unit + " €/jour (choisissez vos dates pour le tarif exact)"
+            : "Quantité : " + qty + sizeText + " · " + unit + " €/jour × " + days + " jour" + (days > 1 ? "s" : "") + (familyDiscountApplies(line.id, idTotalQty(line.id)) ? " · pack famille -10%" : "");
 
           itemsHtml += '<div class="cart-item">' +
             '<div><div class="cart-item-name">' + item.name + '</div>' +
             '<div class="cart-item-meta">' + metaText + '</div>' +
-            '<button type="button" class="cart-item-remove" data-remove="' + item.id + '">Retirer</button></div>' +
+            '<button type="button" class="cart-item-remove" data-remove="' + idx + '">Retirer</button></div>' +
             '<div class="cart-item-price">' + itemLineTotal + ' €</div>' +
             '</div>';
-        }
+        });
 
         var datesSummary = '<div class="dates-summary">' +
           '<div><strong>Retrait</strong>' + formatDate(retrait) + '</div>' +
@@ -228,7 +234,7 @@
           '</div>';
 
         content.querySelectorAll("[data-remove]").forEach(function (btn) {
-          btn.addEventListener("click", function () { removeFromCart(btn.getAttribute("data-remove")); });
+          btn.addEventListener("click", function () { removeLine(parseInt(btn.getAttribute("data-remove"), 10)); });
         });
 
         document.getElementById("send-btn").addEventListener("click", function () {
@@ -236,19 +242,20 @@
           var email = document.getElementById("client-email").value.trim();
           var message = document.getElementById("client-message").value.trim();
 
-          var lines = ids.map(function (id) {
-            var item = findItem(id);
-            var qty = cart[id];
+          var mailLines = lines.map(function (line) {
+            var item = findItem(line.id);
+            var qty = line.qty;
             var unit = tierIndex === null ? item.prices[2] : item.prices[tierIndex];
-            var discountNote = familyDiscountApplies(id, qty) ? ", pack famille -10%" : "";
-            return "- " + item.name + " x" + qty + " (" + unit + " €/jour" + discountNote + ", caution " + item.caution + " €)";
+            var discountNote = familyDiscountApplies(line.id, idTotalQty(line.id)) ? ", pack famille -10%" : "";
+            var sizeNote = line.size ? " (taille : " + line.size + ")" : "";
+            return "- " + item.name + sizeNote + " x" + qty + " (" + unit + " €/jour" + discountNote + ", caution " + item.caution + " €)";
           });
 
           var bodyParts = [
             "Bonjour Kit Lagon,",
             "",
             "Je souhaite réserver :",
-            lines.join("\n"),
+            mailLines.join("\n"),
             "",
             "Date de retrait : " + (retrait || "à préciser"),
             "Date de retour : " + (retour || "à préciser"),

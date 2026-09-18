@@ -195,6 +195,8 @@
             '<div class="field"><label>+5 j (€)</label><input type="number" step="0.5" class="item-p2" value="' + item.prices[2] + '"></div>' +
             '<div class="field"><label>Caution (€)</label><input type="number" step="1" class="item-caution" value="' + item.caution + '"></div>' +
           '</div>' +
+          '<div class="field"><label>Stock (nombre d\'unités possédées — laisser vide si illimité)</label><input type="number" step="1" class="item-stock" value="' + (item.stock != null ? item.stock : '') + '"></div>' +
+          '<div class="field"><label>Tailles (séparées par des virgules — laisser vide si pas de tailles)</label><input type="text" class="item-sizes" value="' + ((item.sizes || []).join(", ")) + '"></div>' +
           '<div class="item-actions"><button type="button" class="btn btn-secondary btn-small" data-remove-item="' + gi + ':' + ii + '">Supprimer ce produit</button></div>' +
           '</div>';
       });
@@ -221,6 +223,14 @@
           parseFloat(itemEl.querySelector(".item-p2").value) || 0
         ];
         item.caution = parseFloat(itemEl.querySelector(".item-caution").value) || 0;
+        var stockVal = itemEl.querySelector(".item-stock").value.trim();
+        item.stock = stockVal === "" ? null : parseInt(stockVal, 10);
+        var sizesVal = itemEl.querySelector(".item-sizes").value.trim();
+        if (sizesVal){
+          item.sizes = sizesVal.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+        } else {
+          delete item.sizes;
+        }
       });
     });
   }
