@@ -1,18 +1,38 @@
-[
-  { "group": "Pack plage", "note": "sans réservation d'emplacement", "items": [
-    { "id": "glaciere", "name": "Glacière + pain de glace", "desc": "Pour garder boissons et pique-nique au frais.", "prices": [7, 5.5, 4], "caution": 50, "stock": 5 },
-    { "id": "parasol", "name": "Parasol + pied", "desc": "Pour s'abriter du soleil, à installer vous-même.", "prices": [6, 4.5, 3], "caution": 30, "stock": 5 }
-  ]},
-  { "group": "Snorkeling", "note": "masque, tuba, palmes", "items": [
-    { "id": "pmt", "name": "Kit PMT", "desc": "Palmes, masque et tuba classiques.", "prices": [17, 13, 10], "caution": 80, "stock": 10 },
-    { "id": "palme-easy", "name": "Palmes + masque Easybreath", "desc": "Masque facial intégral et palmes réglables.", "prices": [17, 13, 10], "caution": 80, "stock": 10 },
-    { "id": "masque-tuba", "name": "Masque + tuba", "desc": "Le duo simple pour explorer le lagon.", "prices": [10, 8, 6], "caution": 40, "stock": null, "sizes": ["Enfant", "Adulte"] },
-    { "id": "easybreath", "name": "Masque Easybreath seul", "desc": "Vision panoramique, respiration par le nez et la bouche.", "prices": [10, 8, 6], "caution": 40, "stock": null, "sizes": ["XS (enfant)", "S/M", "M/L"] },
-    { "id": "palmes", "name": "Palmes seules", "desc": "Réglables, pour tous les pieds.", "prices": [9, 7, 5], "caution": 40, "stock": null, "sizes": ["Taille 1", "Taille 2", "Taille 3"] }
-  ]},
-  { "group": "Caméra 360° étanche", "note": "seule ou avec kit snorkeling", "items": [
-    { "id": "cam360", "name": "Caméra 360° + accessoires aquatiques", "desc": "Perche, flotteur et carte mémoire fournis.", "prices": [37, 34, 30], "caution": 450, "stock": 1 },
-    { "id": "pmt-cam", "name": "Kit PMT + caméra", "desc": "Le kit snorkeling complet avec caméra embarquée.", "prices": [50, 43, 35], "caution": 500, "stock": 1 },
-    { "id": "easy-cam", "name": "Palmes + Easybreath + caméra", "desc": "Confort du masque intégral avec caméra 360°.", "prices": [50, 43, 35], "caution": 500, "stock": 1 }
-  ]}
-]
+{
+  "components": [
+    { "id": "palmes", "name": "Palmes", "sizes": ["Taille 1", "Taille 2", "Taille 3"], "stock": { "Taille 1": null, "Taille 2": 8, "Taille 3": null } },
+    { "id": "masque-tuba", "name": "Masque + tuba", "sizes": ["Enfant", "Adulte"], "stock": { "Enfant": null, "Adulte": null } },
+    { "id": "easybreath", "name": "Masque Easybreath", "sizes": ["XS (enfant)", "S/M", "M/L"], "stock": { "XS (enfant)": null, "S/M": null, "M/L": null } },
+    { "id": "camera", "name": "Caméra 360°", "sizes": null, "stock": 1 },
+    { "id": "glaciere-mat", "name": "Glacière", "sizes": null, "stock": 5 },
+    { "id": "parasol-mat", "name": "Parasol", "sizes": null, "stock": 5 }
+  ],
+  "groups": [
+    { "group": "Pack plage", "note": "sans réservation d'emplacement", "items": [
+      { "id": "glaciere", "name": "Glacière + pain de glace", "desc": "Pour garder boissons et pique-nique au frais.", "prices": [7, 5.5, 4], "caution": 50,
+        "components": [ { "id": "glaciere-mat", "qty": 1, "needsSize": false } ] },
+      { "id": "parasol", "name": "Parasol + pied", "desc": "Pour s'abriter du soleil, à installer vous-même.", "prices": [6, 4.5, 3], "caution": 30,
+        "components": [ { "id": "parasol-mat", "qty": 1, "needsSize": false } ] }
+    ]},
+    { "group": "Snorkeling", "note": "masque, tuba, palmes", "items": [
+      { "id": "pmt", "name": "Kit PMT", "desc": "Palmes, masque et tuba classiques.", "prices": [17, 13, 10], "caution": 80,
+        "components": [ { "id": "palmes", "qty": 1, "needsSize": true }, { "id": "masque-tuba", "qty": 1, "needsSize": true } ] },
+      { "id": "palme-easy", "name": "Palmes + masque Easybreath", "desc": "Masque facial intégral et palmes réglables.", "prices": [17, 13, 10], "caution": 80,
+        "components": [ { "id": "palmes", "qty": 1, "needsSize": true }, { "id": "easybreath", "qty": 1, "needsSize": true } ] },
+      { "id": "masque-tuba", "name": "Masque + tuba", "desc": "Le duo simple pour explorer le lagon.", "prices": [10, 8, 6], "caution": 40,
+        "components": [ { "id": "masque-tuba", "qty": 1, "needsSize": true } ] },
+      { "id": "easybreath", "name": "Masque Easybreath seul", "desc": "Vision panoramique, respiration par le nez et la bouche.", "prices": [10, 8, 6], "caution": 40,
+        "components": [ { "id": "easybreath", "qty": 1, "needsSize": true } ] },
+      { "id": "palmes", "name": "Palmes seules", "desc": "Réglables, pour tous les pieds.", "prices": [9, 7, 5], "caution": 40,
+        "components": [ { "id": "palmes", "qty": 1, "needsSize": true } ] }
+    ]},
+    { "group": "Caméra 360° étanche", "note": "seule ou avec kit snorkeling", "items": [
+      { "id": "cam360", "name": "Caméra 360° + accessoires aquatiques", "desc": "Perche, flotteur et carte mémoire fournis.", "prices": [37, 34, 30], "caution": 450,
+        "components": [ { "id": "camera", "qty": 1, "needsSize": false } ] },
+      { "id": "pmt-cam", "name": "Kit PMT + caméra", "desc": "Le kit snorkeling complet avec caméra embarquée.", "prices": [50, 43, 35], "caution": 500,
+        "components": [ { "id": "palmes", "qty": 1, "needsSize": true }, { "id": "masque-tuba", "qty": 1, "needsSize": true }, { "id": "camera", "qty": 1, "needsSize": false } ] },
+      { "id": "easy-cam", "name": "Palmes + Easybreath + caméra", "desc": "Confort du masque intégral avec caméra 360°.", "prices": [50, 43, 35], "caution": 500,
+        "components": [ { "id": "palmes", "qty": 1, "needsSize": true }, { "id": "easybreath", "qty": 1, "needsSize": true }, { "id": "camera", "qty": 1, "needsSize": false } ] }
+    ]}
+  ]
+}

@@ -128,7 +128,7 @@
   fetch("products.json")
     .then(function (r) { return r.json(); })
     .then(function (data) {
-      catalogue = flattenCatalogue(data);
+      catalogue = flattenCatalogue(data.groups);
 
       var params = new URLSearchParams(window.location.search);
       var retrait = params.get("retrait") || "";
@@ -139,7 +139,7 @@
         var raw = JSON.parse(params.get("cart") || "[]");
         raw.forEach(function (l) {
           if (l && l.id && findItem(l.id) && l.qty > 0){
-            lines.push({ id: l.id, size: l.size || null, qty: l.qty });
+            lines.push({ id: l.id, sizes: l.sizes || {}, qty: l.qty });
           }
         });
       } catch (e) { lines = []; }
@@ -198,7 +198,7 @@
           total += itemLineTotal;
           totalCaution += item.caution * qty;
 
-          var sizeText = line.size ? " · Taille : " + line.size : "";
+          var sizeText = (line.sizes && Object.keys(line.sizes).length) ? " · " + Object.values(line.sizes).join(" · ") : "";
           var metaText = tierIndex === null
             ? "Quantité : " + qty + sizeText + " · dès " + unit + " €/jour (choisissez vos dates pour le tarif exact)"
             : "Quantité : " + qty + sizeText + " · " + unit + " €/jour × " + days + " jour" + (days > 1 ? "s" : "") + (familyDiscountApplies(line.id, idTotalQty(line.id)) ? " · pack famille -10%" : "");
@@ -247,7 +247,7 @@
             var qty = line.qty;
             var unit = tierIndex === null ? item.prices[2] : item.prices[tierIndex];
             var discountNote = familyDiscountApplies(line.id, idTotalQty(line.id)) ? ", pack famille -10%" : "";
-            var sizeNote = line.size ? " (taille : " + line.size + ")" : "";
+            var sizeNote = (line.sizes && Object.keys(line.sizes).length) ? " (" + Object.values(line.sizes).join(", ") + ")" : "";
             return "- " + item.name + sizeNote + " x" + qty + " (" + unit + " €/jour" + discountNote + ", caution " + item.caution + " €)";
           });
 

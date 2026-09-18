@@ -128,6 +128,14 @@
   .size-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
   .size-label{font-size:0.84rem;}
 
+  .size-picker{border-top:1px solid var(--line);margin-top:4px;padding-top:10px;}
+  .size-select-row{margin-bottom:8px;}
+  .size-select-row label{display:block;font-size:0.76rem;color:var(--ink-soft);margin-bottom:3px;}
+  .size-select-row select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:0.86rem;background:white;color:var(--ink);}
+  .size-picker-msg{font-size:0.78rem;color:var(--coral);margin-top:6px;}
+  .size-cart-lines{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px;display:flex;flex-direction:column;gap:6px;}
+  .size-cart-line{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.8rem;}
+
   .cart-bar{
     position:sticky;bottom:18px;display:flex;justify-content:center;margin-top:8px;z-index:5;
   }
@@ -305,31 +313,82 @@
 </footer>
 
 <script>
-  var catalogue = [];
-  var cart = {}; // clé = id, ou "id::taille" si l'article a des tailles
+  var catalogue = { components: [], groups: [] };
+  var cart = {}; // clé = cartKey(productId, sizes) -> qty
   var FAMILY_PACK = { id: "pmt", minQty: 4, discount: 0.10 };
 
-  function keyOf(id, size){ return size ? id + "::" + size : id; }
-  function parseKey(key){
-    var idx = key.indexOf("::");
-    return idx === -1 ? { id: key, size: null } : { id: key.slice(0, idx), size: key.slice(idx + 2) };
+  function findComponent(id){
+    return catalogue.components.filter(function (c) { return c.id === id; })[0] || null;
   }
-
-  function findItem(id){
-    for (var g = 0; g < catalogue.length; g++){
-      for (var i = 0; i < catalogue[g].items.length; i++){
-        if (catalogue[g].items[i].id === id) return catalogue[g].items[i];
+  function findProduct(id){
+    for (var g = 0; g < catalogue.groups.length; g++){
+      for (var i = 0; i < catalogue.groups[g].items.length; i++){
+        if (catalogue.groups[g].items[i].id === id) return catalogue.groups[g].items[i];
       }
     }
     return null;
   }
 
-  function stockUsed(id){
-    var used = 0;
+  function cartKey(productId, sizes){ return productId + "::" + JSON.stringify(sizes || {}); }
+  function parseCartKey(key){
+    var idx = key.indexOf("::");
+    return { productId: key.slice(0, idx), sizes: JSON.parse(key.slice(idx + 2)) };
+  }
+
+  function computeComponentUsage(){
+    var usage = {};
     Object.keys(cart).forEach(function (key) {
-      if (parseKey(key).id === id) used += cart[key];
+      var parsed = parseCartKey(key);
+      var item = findProduct(parsed.productId);
+      if (!item) return;
+      var qty = cart[key];
+      (item.components || []).forEach(function (req) {
+        var size = req.needsSize ? parsed.sizes[req.id] : null;
+        var ukey = req.id + "|" + (size || "");
+        usage[ukey] = (usage[ukey] || 0) + qty * (req.qty || 1);
+      });
     });
-    return used;
+    return usage;
+  }
+
+  function componentRemaining(componentId, size, usage){
+    var comp = findComponent(componentId);
+    if (!comp) return Infinity;
+    var stock = comp.sizes ? (comp.stock ? comp.stock[size] : null) : comp.stock;
+    if (stock == null) return Infinity;
+    var used = usage[componentId + "|" + (size || "")] || 0;
+    return stock - used;
+  }
+
+  function canAdd(item, sizes, delta, usage){
+    var blocking = null;
+    (item.components || []).forEach(function (req) {
+      if (blocking) return;
+      var size = req.needsSize ? sizes[req.id] : null;
+      var remaining = componentRemaining(req.id, size, usage);
+      if (remaining < delta * (req.qty || 1)) blocking = { componentId: req.id, size: size };
+    });
+    return blocking;
+  }
+
+  function componentLabel(componentId, size){
+    var comp = findComponent(componentId);
+    var name = comp ? comp.name : componentId;
+    return size ? name + " (" + size + ")" : name;
+  }
+
+  function contactMailto(label){
+    var subject = encodeURIComponent("Disponibilité — " + label);
+    var body = encodeURIComponent("Bonjour Kit Lagon,\n\nJe souhaiterais louer \"" + label + "\" mais le stock affiché sur le site est complet. Avez-vous de la disponibilité ?\n\nMerci !");
+    return "mailto:contact@kitlagon.re?subject=" + subject + "&body=" + body;
+  }
+
+  function productTotalQty(productId){
+    var t = 0;
+    Object.keys(cart).forEach(function (key) {
+      if (parseCartKey(key).productId === productId) t += cart[key];
+    });
+    return t;
   }
 
   function getDays(){
@@ -369,34 +428,21 @@
     }
   }
 
-  function contactMailto(itemName){
-    var subject = encodeURIComponent("Disponibilité — " + itemName);
-    var body = encodeURIComponent("Bonjour Kit Lagon,\n\nJe souhaiterais louer \"" + itemName + "\" mais le stock affiché sur le site est complet. Avez-vous de la disponibilité ?\n\nMerci !");
-    return "mailto:contact@kitlagon.re?subject=" + subject + "&body=" + body;
-  }
-
-  function qtyStepperHtml(id, size, qty, atMax){
-    return '<div class="qty-control">' +
-      '<button type="button" aria-label="Retirer" data-action="dec" data-id="' + id + '"' + (size ? ' data-size="' + size + '"' : '') + '>−</button>' +
-      '<span>' + qty + '</span>' +
-      '<button type="button" aria-label="Ajouter" data-action="inc" data-id="' + id + '"' + (size ? ' data-size="' + size + '"' : '') + (atMax ? ' disabled' : '') + '>+</button>' +
-      '</div>';
-  }
-
   function renderCatalogue(){
     var days = getDays();
     var tierIndex = getTierIndex(days);
     updateDatesHint(days);
+    var usage = computeComponentUsage();
 
     var root = document.getElementById("catalogue-groups");
     var html = "";
-    for (var g = 0; g < catalogue.length; g++){
-      var group = catalogue[g];
+    for (var g = 0; g < catalogue.groups.length; g++){
+      var group = catalogue.groups[g];
       html += '<div class="cat-group"><div class="cat-group-title">' + group.group +
         ' <span style="font-family:\'Work Sans\',sans-serif;font-size:0.78rem;color:var(--ink-soft);font-weight:400;">— ' + group.note + '</span></div><div class="product-grid">';
       for (var i = 0; i < group.items.length; i++){
         var item = group.items[i];
-        var totalQtyForItem = stockUsed(item.id);
+        var totalQtyForItem = productTotalQty(item.id);
         var priceBlock;
         if (tierIndex === null){
           priceBlock = '<span class="from">à partir de</span><span class="amount">' + item.prices[2] + ' €</span><span class="unit">/jour</span>';
@@ -407,30 +453,66 @@
             '<div class="total-line">soit ' + total + ' € au total' + (familyDiscountApplies(item.id, totalQtyForItem) ? ' (pack famille -10% appliqué)' : '') + '</div>';
         }
         var familyNote = item.id === FAMILY_PACK.id ? '<div class="product-caution" style="color:var(--lagoon-bright);">Pack famille : -10% à partir de 4 kits</div>' : '';
-        var stockAtMax = item.stock != null && totalQtyForItem >= item.stock;
-        var stockNote = stockAtMax
-          ? '<div class="product-caution" style="color:var(--coral);">Stock complet — <a href="' + contactMailto(item.name) + '">nous contacter</a></div>'
-          : (item.stock != null ? '<div class="product-caution">' + (item.stock - totalQtyForItem) + ' disponible(s)</div>' : '');
 
-        html += '<div class="product-card" data-id="' + item.id + '">' +
+        html += '<div class="product-card" data-product="' + item.id + '">' +
           '<img class="product-image" src="images/kits/' + item.id + '.jpg" alt="' + item.name + '" onerror="this.remove()">' +
           '<div class="product-name">' + item.name + '</div>' +
           '<p class="product-desc">' + item.desc + '</p>' +
           '<div class="product-price">' + priceBlock + '</div>' +
           '<div class="product-caution">Caution ' + item.caution + ' €</div>' +
-          familyNote + stockNote;
+          familyNote;
 
-        if (item.sizes && item.sizes.length){
-          html += '<div class="size-rows">';
-          item.sizes.forEach(function (size) {
-            var qty = cart[keyOf(item.id, size)] || 0;
-            var rowAtMax = item.stock != null && totalQtyForItem >= item.stock && qty === 0;
-            html += '<div class="size-row"><span class="size-label">' + size + '</span>' + qtyStepperHtml(item.id, size, qty, rowAtMax) + '</div>';
-          });
-          html += '</div>';
+        var sizedComponents = (item.components || []).filter(function (c) { return c.needsSize; });
+
+        if (sizedComponents.length === 0){
+          var qty0 = cart[cartKey(item.id, {})] || 0;
+          var blockedNone = canAdd(item, {}, 1, usage);
+          html += '<div class="qty-row">' +
+            '<div class="qty-control">' +
+              '<button type="button" data-action="dec" data-product="' + item.id + '" data-sizes="{}">−</button>' +
+              '<span>' + qty0 + '</span>' +
+              '<button type="button" data-action="inc" data-product="' + item.id + '" data-sizes="{}"' + (blockedNone && qty0 === 0 ? ' disabled' : '') + '>+</button>' +
+            '</div>' +
+          '</div>';
+          if (blockedNone){
+            html += '<div class="product-caution" style="color:var(--coral);">Stock complet (' + componentLabel(blockedNone.componentId, blockedNone.size) + ') — <a href="' + contactMailto(item.name) + '">nous contacter</a></div>';
+          }
         } else {
-          var qty0 = cart[item.id] || 0;
-          html += '<div class="qty-row">' + qtyStepperHtml(item.id, null, qty0, stockAtMax && qty0 === 0) + '</div>';
+          html += '<div class="size-picker" data-product="' + item.id + '">';
+          sizedComponents.forEach(function (req) {
+            var comp = findComponent(req.id);
+            html += '<div class="size-select-row"><label>' + comp.name + '</label><select class="size-select" data-component="' + req.id + '">';
+            comp.sizes.forEach(function (size) {
+              var remaining = componentRemaining(req.id, size, usage);
+              var suffix = remaining === Infinity ? "" : " (" + Math.max(remaining, 0) + " dispo)";
+              html += '<option value="' + size + '">' + size + suffix + '</option>';
+            });
+            html += '</select></div>';
+          });
+          html += '<button type="button" class="add-btn size-add-btn" data-product="' + item.id + '">+ Ajouter cette combinaison</button>' +
+            '<div class="size-picker-msg" data-product="' + item.id + '"></div>';
+
+          var existingLines = Object.keys(cart)
+            .map(parseCartKey)
+            .filter(function (p) { return p.productId === item.id; });
+          if (existingLines.length){
+            html += '<div class="size-cart-lines">';
+            existingLines.forEach(function (p) {
+              var key = cartKey(p.productId, p.sizes);
+              var qty = cart[key];
+              var labels = sizedComponents.map(function (req) { return componentLabel(req.id, p.sizes[req.id]); }).join(" · ");
+              html += '<div class="size-cart-line">' +
+                '<span>' + labels + ' — ' + qty + '×</span>' +
+                '<div class="qty-control">' +
+                  '<button type="button" data-action="dec" data-product="' + item.id + '" data-sizes=\'' + JSON.stringify(p.sizes) + '\'>−</button>' +
+                  '<span>' + qty + '</span>' +
+                  '<button type="button" data-action="inc" data-product="' + item.id + '" data-sizes=\'' + JSON.stringify(p.sizes) + '\'>+</button>' +
+                '</div>' +
+              '</div>';
+            });
+            html += '</div>';
+          }
+          html += '</div>';
         }
 
         html += '</div>';
@@ -440,15 +522,16 @@
     root.innerHTML = html;
   }
 
-  function changeQty(id, size, delta){
-    var item = findItem(id);
-    var key = keyOf(id, size);
-    var current = cart[key] || 0;
-
-    if (delta > 0 && item.stock != null && stockUsed(id) >= item.stock){
-      return;
+  function changeQty(productId, sizes, delta){
+    var item = findProduct(productId);
+    if (!item) return;
+    var usage = computeComponentUsage();
+    if (delta > 0){
+      var blocked = canAdd(item, sizes, delta, usage);
+      if (blocked) return;
     }
-
+    var key = cartKey(productId, sizes);
+    var current = cart[key] || 0;
     var next = Math.max(0, current + delta);
     if (next === 0) delete cart[key]; else cart[key] = next;
     renderCatalogue();
@@ -456,12 +539,32 @@
   }
 
   document.getElementById("catalogue-groups").addEventListener("click", function (e) {
-    var target = e.target.closest("[data-action]");
-    if (!target || target.disabled) return;
-    var id = target.getAttribute("data-id");
-    var size = target.getAttribute("data-size");
-    var action = target.getAttribute("data-action");
-    changeQty(id, size, action === "inc" ? 1 : -1);
+    var stepBtn = e.target.closest("[data-action]");
+    if (stepBtn && !stepBtn.disabled){
+      var productId = stepBtn.getAttribute("data-product");
+      var sizes = JSON.parse(stepBtn.getAttribute("data-sizes") || "{}");
+      var action = stepBtn.getAttribute("data-action");
+      changeQty(productId, sizes, action === "inc" ? 1 : -1);
+      return;
+    }
+    var addBtn = e.target.closest(".size-add-btn");
+    if (addBtn){
+      var pid = addBtn.getAttribute("data-product");
+      var item = findProduct(pid);
+      var picker = document.querySelector('.size-picker[data-product="' + pid + '"]');
+      var sizesObj = {};
+      picker.querySelectorAll(".size-select").forEach(function (sel) {
+        sizesObj[sel.getAttribute("data-component")] = sel.value;
+      });
+      var usage = computeComponentUsage();
+      var blocked = canAdd(item, sizesObj, 1, usage);
+      var msgEl = document.querySelector('.size-picker-msg[data-product="' + pid + '"]');
+      if (blocked){
+        msgEl.innerHTML = 'Stock complet (' + componentLabel(blocked.componentId, blocked.size) + ') — <a href="' + contactMailto(item.name) + '">nous contacter</a>';
+      } else {
+        changeQty(pid, sizesObj, 1);
+      }
+    }
   });
 
   function cartTotal(){
@@ -472,17 +575,17 @@
     var keys = Object.keys(cart);
     var seenIds = {};
     for (var k = 0; k < keys.length; k++){
-      var parsed = parseKey(keys[k]);
-      var item = findItem(parsed.id);
+      var parsed = parseCartKey(keys[k]);
+      var item = findProduct(parsed.productId);
+      if (!item) continue;
       var qty = cart[keys[k]];
       count += qty;
       var unit = tierIndex === null ? item.prices[2] : item.prices[tierIndex];
       var mult = tierIndex === null ? 1 : days;
-      // la remise pack famille se calcule sur le total de l'article (toutes tailles confondues)
-      var idTotalQty = seenIds[parsed.id] != null ? seenIds[parsed.id] : stockUsed(parsed.id);
-      seenIds[parsed.id] = idTotalQty;
+      var idTotalQty = seenIds[parsed.productId] != null ? seenIds[parsed.productId] : productTotalQty(parsed.productId);
+      seenIds[parsed.productId] = idTotalQty;
       var raw = unit * mult * qty;
-      if (familyDiscountApplies(parsed.id, idTotalQty)) raw = raw * (1 - FAMILY_PACK.discount);
+      if (familyDiscountApplies(parsed.productId, idTotalQty)) raw = raw * (1 - FAMILY_PACK.discount);
       total += Math.round(raw * 100) / 100;
     }
     return { count: count, total: Math.round(total * 100) / 100, hasDays: tierIndex !== null };
@@ -509,8 +612,8 @@
     var keys = Object.keys(cart);
     if (keys.length === 0) return;
     var lines = keys.map(function (key) {
-      var parsed = parseKey(key);
-      return { id: parsed.id, size: parsed.size, qty: cart[key] };
+      var parsed = parseCartKey(key);
+      return { id: parsed.productId, sizes: parsed.sizes, qty: cart[key] };
     });
     var retrait = document.getElementById("date-retrait").value;
     var retour = document.getElementById("date-retour").value;
@@ -520,6 +623,10 @@
     if (retour) params.set("retour", retour);
     window.location.href = "panier.html?" + params.toString();
   }
+
+  document.getElementById("nav-cart-btn").addEventListener("click", goToCart);
+  document.getElementById("cart-bar-btn").addEventListener("click", goToCart);
+
 
   document.getElementById("nav-cart-btn").addEventListener("click", goToCart);
   document.getElementById("cart-bar-btn").addEventListener("click", goToCart);

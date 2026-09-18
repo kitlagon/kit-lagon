@@ -96,6 +96,7 @@
     <p class="status" id="auth-status"></p>
   </div>
 
+  <div id="stock-editor"></div>
   <div id="editor"></div>
 
   <div class="sticky-save" id="sticky-save" style="display:none;">
@@ -114,7 +115,7 @@
 
   var token = "";
   var currentSha = null;
-  var catalogue = [];
+  var catalogue = { components: [], groups: [] };
 
   function b64DecodeUnicode(str){
     var binary = atob(str.replace(/\n/g, ""));
@@ -174,10 +175,56 @@
       });
   });
 
+  function componentLabel(comp, item){
+    var req = (item.components || []).filter(function (c) { return c.id === comp.id; })[0];
+    return req ? comp.name + (req.needsSize ? " (tailles)" : "") : null;
+  }
+
+  function renderStockEditor(){
+    var root = document.getElementById("stock-editor");
+    var html = '<div class="panel"><h2>Stock des composants</h2><p class="help" style="margin-top:0;margin-bottom:14px;">Ce stock est partagé entre tous les produits qui utilisent ce composant (ex : les palmes d\'une taille servent aussi bien en location seule qu\'en kit PMT).</p>';
+    catalogue.components.forEach(function (comp, ci) {
+      html += '<div class="field" data-ci="' + ci + '"><label>' + comp.name + '</label>';
+      if (comp.sizes && comp.sizes.length){
+        html += '<div class="price-row" style="grid-template-columns:repeat(' + comp.sizes.length + ', 1fr);">';
+        comp.sizes.forEach(function (size) {
+          var val = comp.stock && comp.stock[size] != null ? comp.stock[size] : "";
+          html += '<div class="field"><label style="font-size:0.72rem;">' + size + '</label><input type="number" step="1" class="comp-stock-size" data-size="' + size.replace(/"/g, "&quot;") + '" value="' + val + '" placeholder="illimité"></div>';
+        });
+        html += '</div>';
+      } else {
+        var flatVal = comp.stock != null ? comp.stock : "";
+        html += '<input type="number" step="1" class="comp-stock-flat" value="' + flatVal + '" placeholder="illimité">';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+    root.innerHTML = html;
+  }
+
+  function readStockEditor(){
+    document.querySelectorAll('#stock-editor .field[data-ci]').forEach(function (fieldEl) {
+      var ci = parseInt(fieldEl.getAttribute("data-ci"), 10);
+      var comp = catalogue.components[ci];
+      if (comp.sizes && comp.sizes.length){
+        var stock = {};
+        fieldEl.querySelectorAll(".comp-stock-size").forEach(function (input) {
+          var v = input.value.trim();
+          stock[input.getAttribute("data-size")] = v === "" ? null : parseInt(v, 10);
+        });
+        comp.stock = stock;
+      } else {
+        var flat = fieldEl.querySelector(".comp-stock-flat").value.trim();
+        comp.stock = flat === "" ? null : parseInt(flat, 10);
+      }
+    });
+  }
+
   function renderEditor(){
+    renderStockEditor();
     var root = document.getElementById("editor");
     var html = "";
-    catalogue.forEach(function (group, gi) {
+    catalogue.groups.forEach(function (group, gi) {
       html += '<div class="panel group-block" data-gi="' + gi + '">';
       html += '<div class="group-title-row">' +
         '<div class="field" style="margin-bottom:0;"><label>Nom de la catégorie</label><input type="text" class="group-name" value="' + group.group.replace(/"/g, "&quot;") + '"></div>' +
@@ -185,8 +232,12 @@
         '</div>';
 
       group.items.forEach(function (item, ii) {
+        var compLabels = (item.components || []).map(function (req) {
+          var comp = catalogue.components.filter(function (c) { return c.id === req.id; })[0];
+          return comp ? comp.name + (req.needsSize ? " (à tailles)" : "") : req.id;
+        }).join(", ");
         html += '<div class="item-block" data-ii="' + ii + '">' +
-          '<div class="item-id">Identifiant technique : ' + item.id + ' (fixe)</div>' +
+          '<div class="item-id">Identifiant technique : ' + item.id + ' (fixe) — composants : ' + (compLabels || "aucun") + '</div>' +
           '<div class="field"><label>Nom</label><input type="text" class="item-name" value="' + item.name.replace(/"/g, "&quot;") + '"></div>' +
           '<div class="field"><label>Description</label><textarea class="item-desc" rows="2">' + item.desc + '</textarea></div>' +
           '<div class="price-row">' +
@@ -195,8 +246,6 @@
             '<div class="field"><label>+5 j (€)</label><input type="number" step="0.5" class="item-p2" value="' + item.prices[2] + '"></div>' +
             '<div class="field"><label>Caution (€)</label><input type="number" step="1" class="item-caution" value="' + item.caution + '"></div>' +
           '</div>' +
-          '<div class="field"><label>Stock (nombre d\'unités possédées — laisser vide si illimité)</label><input type="number" step="1" class="item-stock" value="' + (item.stock != null ? item.stock : '') + '"></div>' +
-          '<div class="field"><label>Tailles (séparées par des virgules — laisser vide si pas de tailles)</label><input type="text" class="item-sizes" value="' + ((item.sizes || []).join(", ")) + '"></div>' +
           '<div class="item-actions"><button type="button" class="btn btn-secondary btn-small" data-remove-item="' + gi + ':' + ii + '">Supprimer ce produit</button></div>' +
           '</div>';
       });
@@ -208,13 +257,14 @@
   }
 
   function readEditorIntoCatalogue(){
+    readStockEditor();
     document.querySelectorAll(".group-block").forEach(function (groupEl) {
       var gi = parseInt(groupEl.getAttribute("data-gi"), 10);
-      catalogue[gi].group = groupEl.querySelector(".group-name").value.trim();
-      catalogue[gi].note = groupEl.querySelector(".group-note").value.trim();
+      catalogue.groups[gi].group = groupEl.querySelector(".group-name").value.trim();
+      catalogue.groups[gi].note = groupEl.querySelector(".group-note").value.trim();
       groupEl.querySelectorAll(".item-block").forEach(function (itemEl) {
         var ii = parseInt(itemEl.getAttribute("data-ii"), 10);
-        var item = catalogue[gi].items[ii];
+        var item = catalogue.groups[gi].items[ii];
         item.name = itemEl.querySelector(".item-name").value.trim();
         item.desc = itemEl.querySelector(".item-desc").value.trim();
         item.prices = [
@@ -223,14 +273,6 @@
           parseFloat(itemEl.querySelector(".item-p2").value) || 0
         ];
         item.caution = parseFloat(itemEl.querySelector(".item-caution").value) || 0;
-        var stockVal = itemEl.querySelector(".item-stock").value.trim();
-        item.stock = stockVal === "" ? null : parseInt(stockVal, 10);
-        var sizesVal = itemEl.querySelector(".item-sizes").value.trim();
-        if (sizesVal){
-          item.sizes = sizesVal.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
-        } else {
-          delete item.sizes;
-        }
       });
     });
   }
@@ -245,7 +287,7 @@
       var name = prompt("Nom du nouveau produit :");
       if (!name) return;
       var id = slugify(name);
-      catalogue[gi].items.push({ id: id, name: name, desc: "", prices: [0, 0, 0], caution: 0 });
+      catalogue.groups[gi].items.push({ id: id, name: name, desc: "", prices: [0, 0, 0], caution: 0, components: [] });
       renderEditor();
     }
 
@@ -254,7 +296,7 @@
       var parts = removeBtn.getAttribute("data-remove-item").split(":");
       var gi2 = parseInt(parts[0], 10), ii2 = parseInt(parts[1], 10);
       if (confirm("Supprimer ce produit du catalogue ?")){
-        catalogue[gi2].items.splice(ii2, 1);
+        catalogue.groups[gi2].items.splice(ii2, 1);
         renderEditor();
       }
     }
