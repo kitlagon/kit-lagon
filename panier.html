@@ -129,6 +129,7 @@
     .then(function (r) { return r.json(); })
     .then(function (data) {
       catalogue = flattenCatalogue(data.groups);
+      var promoCodes = data.promoCodes || [];
 
       var params = new URLSearchParams(window.location.search);
       var retrait = params.get("retrait") || "";
@@ -174,6 +175,17 @@
         return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
       }
 
+      var appliedPromo = null;
+
+      function findValidPromo(codeInput){
+        var code = codeInput.trim().toUpperCase();
+        var match = promoCodes.filter(function (p) { return p.code.toUpperCase() === code; })[0];
+        if (!match) return { error: "Code promo introuvable." };
+        if (!retrait) return { error: "Choisissez d'abord vos dates sur la page précédente pour vérifier ce code." };
+        if (retrait < match.from || retrait > match.to) return { error: "Ce code n'est valable que pour une location débutant entre le " + formatDate(match.from) + " et le " + formatDate(match.to) + "." };
+        return { promo: match };
+      }
+
       function render(){
         var content = document.getElementById("content");
 
@@ -211,6 +223,21 @@
             '</div>';
         });
 
+        var subtotal = Math.round(total * 100) / 100;
+        var finalTotal = subtotal;
+        var promoLineHtml = "";
+        if (appliedPromo){
+          finalTotal = Math.round(subtotal * (1 - appliedPromo.discount) * 100) / 100;
+          promoLineHtml = '<div class="cart-total" style="font-size:0.9rem;color:var(--lagoon-deep);"><span>Code ' + appliedPromo.code + ' (-' + Math.round(appliedPromo.discount * 100) + '%)</span><span>−' + (Math.round((subtotal - finalTotal) * 100) / 100) + ' €</span></div>';
+        }
+
+        var promoBlockHtml = appliedPromo
+          ? '<p class="form-note">Code promo <strong>' + appliedPromo.code + '</strong> appliqué. <button type="button" id="promo-remove" style="background:none;border:none;color:var(--coral);text-decoration:underline;cursor:pointer;font-family:inherit;">Retirer</button></p>'
+          : '<div class="field" style="display:flex;gap:8px;align-items:flex-end;">' +
+              '<div style="flex:1;"><label for="promo-input" style="display:block;font-size:0.84rem;color:var(--ink-soft);margin-bottom:6px;">Code promo</label><input type="text" id="promo-input" placeholder="Ex : NOEL10"></div>' +
+              '<button type="button" class="btn btn-secondary" id="promo-apply" style="background:var(--sand);white-space:nowrap;">Appliquer</button>' +
+            '</div><p class="caution-note" id="promo-error" style="display:none;"></p>';
+
         var datesSummary = '<div class="dates-summary">' +
           '<div><strong>Retrait</strong>' + formatDate(retrait) + '</div>' +
           '<div><strong>Retour</strong>' + formatDate(retour) + '</div>' +
@@ -222,8 +249,14 @@
           '<p class="subtitle">Vérifiez votre sélection avant d\u2019envoyer votre demande.</p>' +
           datesSummary +
           itemsHtml +
-          '<div class="cart-total"><span>Total' + (tierIndex === null ? ' (estimation)' : '') + '</span><span>' + (Math.round(total * 100) / 100) + ' €</span></div>' +
+          '<div class="cart-total"><span>Sous-total' + (tierIndex === null ? ' (estimation)' : '') + '</span><span>' + subtotal + ' €</span></div>' +
+          promoLineHtml +
+          (appliedPromo ? '<div class="cart-total"><span>Total</span><span>' + finalTotal + ' €</span></div>' : '') +
           '<p class="caution-note">+ ' + totalCaution + ' € de caution (pré-autorisation par carte à la remise)</p>' +
+          '<div class="contact-panel">' +
+            '<h3>Code promo</h3>' +
+            promoBlockHtml +
+          '</div>' +
           '<div class="contact-panel">' +
             '<h3>Vos coordonnées</h3>' +
             '<div class="field"><label for="client-nom">Nom</label><input type="text" id="client-nom" placeholder="Votre nom"></div>' +
@@ -236,6 +269,25 @@
         content.querySelectorAll("[data-remove]").forEach(function (btn) {
           btn.addEventListener("click", function () { removeLine(parseInt(btn.getAttribute("data-remove"), 10)); });
         });
+
+        var promoApplyBtn = document.getElementById("promo-apply");
+        if (promoApplyBtn){
+          promoApplyBtn.addEventListener("click", function () {
+            var result = findValidPromo(document.getElementById("promo-input").value || "");
+            var errEl = document.getElementById("promo-error");
+            if (result.error){
+              errEl.textContent = result.error;
+              errEl.style.display = "block";
+            } else {
+              appliedPromo = result.promo;
+              render();
+            }
+          });
+        }
+        var promoRemoveBtn = document.getElementById("promo-remove");
+        if (promoRemoveBtn){
+          promoRemoveBtn.addEventListener("click", function () { appliedPromo = null; render(); });
+        }
 
         document.getElementById("send-btn").addEventListener("click", function () {
           var nom = document.getElementById("client-nom").value.trim();
@@ -257,6 +309,7 @@
             "Je souhaite réserver :",
             mailLines.join("\n"),
             "",
+            appliedPromo ? ("Code promo : " + appliedPromo.code + " (-" + Math.round(appliedPromo.discount * 100) + "%)") : "",
             "Date de retrait : " + (retrait || "à préciser"),
             "Date de retour : " + (retour || "à préciser"),
             "",

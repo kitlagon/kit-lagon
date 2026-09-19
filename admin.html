@@ -66,6 +66,19 @@
     display:flex;align-items:center;gap:14px;box-shadow:0 8px 24px rgba(0,0,0,0.2);
   }
   .sticky-save-inner span{color:white;font-size:0.86rem;}
+
+  .photo-row{display:flex;gap:16px;align-items:flex-start;}
+  .photo-preview{width:140px;height:90px;object-fit:cover;border-radius:8px;background:var(--sand);flex:none;}
+  .photo-controls{flex:1;}
+  .photo-controls input[type="file"]{font-size:0.82rem;margin-bottom:8px;}
+  .photo-status{font-size:0.78rem;color:var(--ink-soft);margin-left:10px;}
+  .item-photo-row{display:flex;gap:12px;align-items:center;margin-top:10px;}
+  .item-photo-row img{width:70px;height:50px;object-fit:cover;border-radius:6px;background:var(--sand);flex:none;}
+  .item-photo-row input[type="file"]{font-size:0.76rem;flex:1;}
+
+  .promo-row, .closed-row{display:grid;grid-template-columns:1fr 90px 1fr 1fr auto;gap:8px;align-items:center;margin-bottom:10px;}
+  .promo-row input, .closed-row input{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:0.86rem;}
+  .closed-row{grid-template-columns:1fr 2fr auto;}
 </style>
 </head>
 <body>
@@ -79,7 +92,7 @@
 
 <div class="wrap">
   <h1>Gestion des produits</h1>
-  <p class="subtitle">Modifiez noms, descriptions, tarifs et cautions — sans toucher au code. Les changements sont publiés directement sur le site.</p>
+  <p class="subtitle">Photos, tarifs, codes promo et jours fermés — sans toucher au code. Les changements sont publiés directement sur le site.</p>
 
   <div class="panel" id="auth-panel">
     <h2>Connexion</h2>
@@ -96,6 +109,9 @@
     <p class="status" id="auth-status"></p>
   </div>
 
+  <div id="hero-photo-editor"></div>
+  <div id="promo-editor"></div>
+  <div id="closed-editor"></div>
   <div id="stock-editor"></div>
   <div id="editor"></div>
 
@@ -149,6 +165,66 @@
     };
   }
 
+  function rawImgUrl(path){
+    return "https://raw.githubusercontent.com/" + REPO_OWNER + "/" + REPO_NAME + "/" + REPO_BRANCH + "/" + path + "?v=" + (catalogue.photoVersion || 1);
+  }
+
+  function uploadImage(path, file){
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var base64 = reader.result.split(",")[1];
+        var getUrl = "https://api.github.com/repos/" + REPO_OWNER + "/" + REPO_NAME + "/contents/" + path + "?ref=" + REPO_BRANCH;
+        fetch(getUrl, { headers: apiHeaders() })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .catch(function () { return null; })
+          .then(function (existing) {
+            var putUrl = "https://api.github.com/repos/" + REPO_OWNER + "/" + REPO_NAME + "/contents/" + path;
+            var body = { message: "Mise à jour photo via admin", content: base64, branch: REPO_BRANCH };
+            if (existing && existing.sha) body.sha = existing.sha;
+            return fetch(putUrl, {
+              method: "PUT",
+              headers: Object.assign({ "Content-Type": "application/json" }, apiHeaders()),
+              body: JSON.stringify(body)
+            });
+          })
+          .then(function (r) {
+            if (!r.ok) return r.json().then(function (e) { throw new Error(e.message || ("HTTP " + r.status)); });
+            resolve();
+          })
+          .catch(reject);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function saveCatalogue(onSuccess, onError){
+    var content = b64EncodeUnicode(JSON.stringify(catalogue, null, 2));
+    var url = "https://api.github.com/repos/" + REPO_OWNER + "/" + REPO_NAME + "/contents/" + FILE_PATH;
+    fetch(url, {
+      method: "PUT",
+      headers: Object.assign({ "Content-Type": "application/json" }, apiHeaders()),
+      body: JSON.stringify({
+        message: "Mise à jour produits via admin",
+        content: content,
+        sha: currentSha,
+        branch: REPO_BRANCH
+      })
+    })
+      .then(function (r) {
+        if (!r.ok) return r.json().then(function (e) { throw new Error(e.message || ("HTTP " + r.status)); });
+        return r.json();
+      })
+      .then(function (data) {
+        currentSha = data.content.sha;
+        if (onSuccess) onSuccess();
+      })
+      .catch(function (err) {
+        if (onError) onError(err);
+      });
+  }
+
   document.getElementById("load-btn").addEventListener("click", function () {
     token = document.getElementById("gh-token").value.trim();
     var statusEl = document.getElementById("auth-status");
@@ -178,6 +254,119 @@
   function componentLabel(comp, item){
     var req = (item.components || []).filter(function (c) { return c.id === comp.id; })[0];
     return req ? comp.name + (req.needsSize ? " (tailles)" : "") : null;
+  }
+
+  function renderHeroPhotoEditor(){
+    var root = document.getElementById("hero-photo-editor");
+    root.innerHTML = '<div class="panel"><h2>Photo de fond (bandeau du haut)</h2>' +
+      '<div class="photo-row">' +
+        '<img class="photo-preview" id="hero-preview" src="' + rawImgUrl("images/hero.jpg") + '" onerror="this.style.opacity=0.3">' +
+        '<div class="photo-controls">' +
+          '<input type="file" accept="image/*" id="hero-file">' +
+          '<button type="button" class="btn btn-secondary btn-small" id="hero-upload-btn">Enregistrer cette photo</button>' +
+          '<span class="photo-status" id="hero-status"></span>' +
+        '</div>' +
+      '</div></div>';
+
+    document.getElementById("hero-upload-btn").addEventListener("click", function () {
+      var fileInput = document.getElementById("hero-file");
+      var statusEl = document.getElementById("hero-status");
+      if (!fileInput.files[0]){ statusEl.textContent = "Choisissez une photo d'abord."; return; }
+      statusEl.textContent = "Envoi en cours...";
+      readEditorIntoCatalogue();
+      uploadImage("images/hero.jpg", fileInput.files[0])
+        .then(function () {
+          catalogue.photoVersion = (catalogue.photoVersion || 1) + 1;
+          saveCatalogue(
+            function () {
+              statusEl.textContent = "Photo mise à jour ✓";
+              document.getElementById("hero-preview").src = rawImgUrl("images/hero.jpg");
+            },
+            function (err) { statusEl.textContent = "Échec : " + err.message; }
+          );
+        })
+        .catch(function (err) { statusEl.textContent = "Échec de l'envoi : " + err.message; });
+    });
+  }
+
+  function renderPromoEditor(){
+    var root = document.getElementById("promo-editor");
+    var html = '<div class="panel"><h2>Codes promo</h2>';
+    (catalogue.promoCodes || []).forEach(function (promo, pi) {
+      html += '<div class="promo-row" data-pi="' + pi + '">' +
+        '<input type="text" class="promo-code" placeholder="Code (ex. NOEL10)" value="' + (promo.code || "").replace(/"/g, "&quot;") + '">' +
+        '<input type="number" class="promo-discount" placeholder="% remise" value="' + Math.round((promo.discount || 0) * 100) + '">' +
+        '<input type="date" class="promo-from" value="' + (promo.from || "") + '">' +
+        '<input type="date" class="promo-to" value="' + (promo.to || "") + '">' +
+        '<button type="button" class="btn btn-secondary btn-small" data-remove-promo="' + pi + '">Suppr.</button>' +
+        '</div>';
+    });
+    html += '<button type="button" class="btn btn-secondary btn-small" id="add-promo-btn">+ Ajouter un code promo</button>';
+    html += '</div>';
+    root.innerHTML = html;
+
+    document.getElementById("add-promo-btn").addEventListener("click", function () {
+      readPromoEditor();
+      catalogue.promoCodes.push({ code: "", discount: 0.10, from: "", to: "" });
+      renderPromoEditor();
+    });
+    root.querySelectorAll("[data-remove-promo]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        readPromoEditor();
+        catalogue.promoCodes.splice(parseInt(btn.getAttribute("data-remove-promo"), 10), 1);
+        renderPromoEditor();
+      });
+    });
+  }
+
+  function readPromoEditor(){
+    if (!catalogue.promoCodes) catalogue.promoCodes = [];
+    document.querySelectorAll("#promo-editor .promo-row").forEach(function (rowEl, i) {
+      catalogue.promoCodes[i] = {
+        code: rowEl.querySelector(".promo-code").value.trim().toUpperCase(),
+        discount: (parseFloat(rowEl.querySelector(".promo-discount").value) || 0) / 100,
+        from: rowEl.querySelector(".promo-from").value,
+        to: rowEl.querySelector(".promo-to").value
+      };
+    });
+  }
+
+  function renderClosedEditor(){
+    var root = document.getElementById("closed-editor");
+    var html = '<div class="panel"><h2>Jours fermés (vacances, indisponibilités)</h2><p class="help" style="margin-top:0;margin-bottom:14px;">Ces dates seront bloquées dans le calendrier de réservation du site. Pour rouvrir une date, supprimez-la simplement de la liste.</p>';
+    (catalogue.closedDates || []).forEach(function (cd, ci) {
+      html += '<div class="closed-row" data-ci="' + ci + '">' +
+        '<input type="date" class="closed-date" value="' + (cd.date || "") + '">' +
+        '<input type="text" class="closed-reason" placeholder="Raison (ex. Vacances)" value="' + (cd.reason || "").replace(/"/g, "&quot;") + '">' +
+        '<button type="button" class="btn btn-secondary btn-small" data-remove-closed="' + ci + '">Rouvrir</button>' +
+        '</div>';
+    });
+    html += '<button type="button" class="btn btn-secondary btn-small" id="add-closed-btn">+ Fermer une date</button>';
+    html += '</div>';
+    root.innerHTML = html;
+
+    document.getElementById("add-closed-btn").addEventListener("click", function () {
+      readClosedEditor();
+      catalogue.closedDates.push({ date: "", reason: "" });
+      renderClosedEditor();
+    });
+    root.querySelectorAll("[data-remove-closed]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        readClosedEditor();
+        catalogue.closedDates.splice(parseInt(btn.getAttribute("data-remove-closed"), 10), 1);
+        renderClosedEditor();
+      });
+    });
+  }
+
+  function readClosedEditor(){
+    if (!catalogue.closedDates) catalogue.closedDates = [];
+    document.querySelectorAll("#closed-editor .closed-row").forEach(function (rowEl, i) {
+      catalogue.closedDates[i] = {
+        date: rowEl.querySelector(".closed-date").value,
+        reason: rowEl.querySelector(".closed-reason").value.trim()
+      };
+    });
   }
 
   function renderStockEditor(){
@@ -221,6 +410,9 @@
   }
 
   function renderEditor(){
+    renderHeroPhotoEditor();
+    renderPromoEditor();
+    renderClosedEditor();
     renderStockEditor();
     var root = document.getElementById("editor");
     var html = "";
@@ -246,6 +438,12 @@
             '<div class="field"><label>+5 j (€)</label><input type="number" step="0.5" class="item-p2" value="' + item.prices[2] + '"></div>' +
             '<div class="field"><label>Caution (€)</label><input type="number" step="1" class="item-caution" value="' + item.caution + '"></div>' +
           '</div>' +
+          '<div class="item-photo-row">' +
+            '<img src="' + rawImgUrl("images/kits/" + item.id + ".jpg") + '" onerror="this.style.display=\'none\'">' +
+            '<input type="file" accept="image/*" class="item-photo-file" data-photo-id="' + item.id + '">' +
+            '<button type="button" class="btn btn-secondary btn-small item-photo-upload" data-photo-id="' + item.id + '">Enregistrer</button>' +
+          '</div>' +
+          '<div class="photo-status item-photo-status" data-photo-id="' + item.id + '"></div>' +
           '<div class="item-actions"><button type="button" class="btn btn-secondary btn-small" data-remove-item="' + gi + ':' + ii + '">Supprimer ce produit</button></div>' +
           '</div>';
       });
@@ -258,6 +456,8 @@
 
   function readEditorIntoCatalogue(){
     readStockEditor();
+    readPromoEditor();
+    readClosedEditor();
     document.querySelectorAll(".group-block").forEach(function (groupEl) {
       var gi = parseInt(groupEl.getAttribute("data-gi"), 10);
       catalogue.groups[gi].group = groupEl.querySelector(".group-name").value.trim();
@@ -300,37 +500,35 @@
         renderEditor();
       }
     }
+
+    var photoBtn = e.target.closest(".item-photo-upload");
+    if (photoBtn){
+      var pid = photoBtn.getAttribute("data-photo-id");
+      var fileInput = document.querySelector('.item-photo-file[data-photo-id="' + pid + '"]');
+      var statusEl = document.querySelector('.item-photo-status[data-photo-id="' + pid + '"]');
+      if (!fileInput.files[0]){ statusEl.textContent = "Choisissez une photo d'abord."; return; }
+      statusEl.textContent = "Envoi en cours...";
+      readEditorIntoCatalogue();
+      uploadImage("images/kits/" + pid + ".jpg", fileInput.files[0])
+        .then(function () {
+          catalogue.photoVersion = (catalogue.photoVersion || 1) + 1;
+          saveCatalogue(
+            function () { renderEditor(); },
+            function (err) { statusEl.textContent = "Échec : " + err.message; }
+          );
+        })
+        .catch(function (err) { statusEl.textContent = "Échec de l'envoi : " + err.message; });
+    }
   });
 
   document.getElementById("save-btn").addEventListener("click", function () {
     readEditorIntoCatalogue();
     var statusText = document.getElementById("save-status-text");
     statusText.textContent = "Enregistrement...";
-
-    var content = b64EncodeUnicode(JSON.stringify(catalogue, null, 2));
-    var url = "https://api.github.com/repos/" + REPO_OWNER + "/" + REPO_NAME + "/contents/" + FILE_PATH;
-
-    fetch(url, {
-      method: "PUT",
-      headers: Object.assign({ "Content-Type": "application/json" }, apiHeaders()),
-      body: JSON.stringify({
-        message: "Mise à jour produits via admin",
-        content: content,
-        sha: currentSha,
-        branch: REPO_BRANCH
-      })
-    })
-      .then(function (r) {
-        if (!r.ok) return r.json().then(function (e) { throw new Error(e.message || ("HTTP " + r.status)); });
-        return r.json();
-      })
-      .then(function (data) {
-        currentSha = data.content.sha;
-        statusText.textContent = "Enregistré ✓ (en ligne dans 1-2 min)";
-      })
-      .catch(function (err) {
-        statusText.textContent = "Échec : " + err.message;
-      });
+    saveCatalogue(
+      function () { statusText.textContent = "Enregistré ✓ (en ligne dans 1-2 min)"; },
+      function (err) { statusText.textContent = "Échec : " + err.message; }
+    );
   });
 </script>
 

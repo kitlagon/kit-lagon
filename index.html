@@ -42,7 +42,6 @@
   .hero{
     position:relative;color:var(--sand-light);overflow:hidden;padding:44px 0;
     background-color:var(--lagoon-deep);
-    background-image:url('images/hero.jpg');
     background-size:cover;background-position:center;background-repeat:no-repeat;
   }
   .hero .wrap{display:grid;grid-template-columns:1.2fr 0.8fr;gap:28px;align-items:center;}
@@ -98,6 +97,7 @@
   .cal-day.cal-selected{background:var(--coral);color:white;font-weight:500;}
   .cal-day.cal-in-range{background:rgba(232,98,46,0.16);}
   .cal-day.cal-today{box-shadow:inset 0 0 0 1px var(--lagoon-bright);}
+  .cal-day.cal-closed{color:var(--coral);text-decoration:line-through;opacity:0.5;}
 
   .dates-selected{display:flex;gap:24px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line);}
   .dates-selected div strong{display:block;font-size:0.76rem;color:var(--ink-soft);font-weight:500;margin-bottom:2px;}
@@ -200,7 +200,7 @@
 </header>
 
 <main id="main">
-  <section class="hero">
+  <section class="hero" id="hero">
     <div class="wrap">
       <div>
         <p class="hero-eyebrow">Saint-Gilles-les-Bains · La Réunion</p>
@@ -455,7 +455,7 @@
         var familyNote = item.id === FAMILY_PACK.id ? '<div class="product-caution" style="color:var(--lagoon-bright);">Pack famille : -10% à partir de 4 kits</div>' : '';
 
         html += '<div class="product-card" data-product="' + item.id + '">' +
-          '<img class="product-image" src="images/kits/' + item.id + '.jpg" alt="' + item.name + '" onerror="this.remove()">' +
+          '<img class="product-image" src="images/kits/' + item.id + '.jpg?v=' + (catalogue.photoVersion || 1) + '" alt="' + item.name + '" onerror="this.remove()">' +
           '<div class="product-name">' + item.name + '</div>' +
           '<p class="product-desc">' + item.desc + '</p>' +
           '<div class="product-price">' + priceBlock + '</div>' +
@@ -677,12 +677,15 @@
 
     for (var d = 1; d <= daysInMonth; d++){
       var iso = isoOf(y, m, d);
-      var disabled = iso < todayStr;
+      var closedInfo = (catalogue.closedDates || []).filter(function (c) { return c.date === iso; })[0];
+      var disabled = iso < todayStr || !!closedInfo;
       var classes = "cal-day";
       if (iso === todayStr) classes += " cal-today";
+      if (closedInfo) classes += " cal-closed";
       if (iso === selRetrait || iso === selRetour) classes += " cal-selected";
       else if (selRetrait && selRetour && iso > selRetrait && iso < selRetour) classes += " cal-in-range";
-      html += '<button type="button" class="' + classes + '" data-iso="' + iso + '"' + (disabled ? " disabled" : "") + '>' + d + '</button>';
+      var titleAttr = closedInfo ? ' title="Fermé : ' + closedInfo.reason + '"' : "";
+      html += '<button type="button" class="' + classes + '" data-iso="' + iso + '"' + (disabled ? " disabled" : "") + titleAttr + '>' + d + '</button>';
     }
     document.getElementById("cal-grid").innerHTML = html;
   }
@@ -729,8 +732,11 @@
     .then(function (r) { return r.json(); })
     .then(function (data) {
       catalogue = data;
+      var heroEl = document.getElementById("hero");
+      heroEl.style.backgroundImage = "url('images/hero.jpg?v=" + (catalogue.photoVersion || 1) + "')";
       renderCatalogue();
       renderCartBar();
+      renderCalendar();
     })
     .catch(function () {
       document.getElementById("catalogue-groups").innerHTML = '<p style="color:var(--coral);">Impossible de charger les kits pour le moment.</p>';
