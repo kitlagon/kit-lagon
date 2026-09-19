@@ -106,14 +106,8 @@
     return 2;
   }
 
-  var FAMILY_PACK = { id: "pmt", minQty: 4, discount: 0.10 };
-  function familyDiscountApplies(id, qty){
-    return id === FAMILY_PACK.id && qty >= FAMILY_PACK.minQty;
-  }
   function computeLineTotal(id, qty, unit, mult){
-    var raw = unit * mult * qty;
-    if (familyDiscountApplies(id, qty)) raw = raw * (1 - FAMILY_PACK.discount);
-    return Math.round(raw * 100) / 100;
+    return Math.round(unit * mult * qty * 100) / 100;
   }
 
   function flattenCatalogue(groups){
@@ -213,7 +207,7 @@
           var sizeText = (line.sizes && Object.keys(line.sizes).length) ? " · " + Object.values(line.sizes).join(" · ") : "";
           var metaText = tierIndex === null
             ? "Quantité : " + qty + sizeText + " · dès " + unit + " €/jour (choisissez vos dates pour le tarif exact)"
-            : "Quantité : " + qty + sizeText + " · " + unit + " €/jour × " + days + " jour" + (days > 1 ? "s" : "") + (familyDiscountApplies(line.id, idTotalQty(line.id)) ? " · pack famille -10%" : "");
+            : "Quantité : " + qty + sizeText + " · " + unit + " €/jour × " + days + " jour" + (days > 1 ? "s" : "");
 
           itemsHtml += '<div class="cart-item">' +
             '<div><div class="cart-item-name">' + item.name + '</div>' +
@@ -298,9 +292,8 @@
             var item = findItem(line.id);
             var qty = line.qty;
             var unit = tierIndex === null ? item.prices[2] : item.prices[tierIndex];
-            var discountNote = familyDiscountApplies(line.id, idTotalQty(line.id)) ? ", pack famille -10%" : "";
             var sizeNote = (line.sizes && Object.keys(line.sizes).length) ? " (" + Object.values(line.sizes).join(", ") + ")" : "";
-            return "- " + item.name + sizeNote + " x" + qty + " (" + unit + " €/jour" + discountNote + ", caution " + item.caution + " €)";
+            return "- " + item.name + sizeNote + " x" + qty + " (" + unit + " €/jour, caution " + item.caution + " €)";
           });
 
           var bodyParts = [
