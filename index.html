@@ -479,7 +479,7 @@
             });
             html += '</select></div>';
           });
-          html += '<button type="button" class="add-btn size-add-btn" data-product="' + item.id + '">+ Ajouter cette combinaison</button>' +
+          html += '<div class="qty-row"><div class="qty-control"><button type="button" class="size-add-btn" data-product="' + item.id + '" title="Ajouter cette combinaison">+</button></div></div>' +
             '<div class="size-picker-msg" data-product="' + item.id + '"></div>';
 
           var existingLines = Object.keys(cart)
