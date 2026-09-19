@@ -361,6 +361,12 @@
   function renderClosedEditor(){
     var root = document.getElementById("closed-editor");
     var today = adminTodayISO();
+
+    // Nettoyage : on retire les dates fermées déjà passées, elles ne servent plus à rien.
+    if (catalogue.closedDates){
+      catalogue.closedDates = catalogue.closedDates.filter(function (cd) { return cd.date >= today; });
+    }
+
     var y = adminCalMonth.getFullYear();
     var m = adminCalMonth.getMonth();
     var firstDay = new Date(y, m, 1).getDay();
@@ -398,17 +404,20 @@
         '<button type="button" class="btn btn-secondary btn-small" id="reopen-selected-btn">Rouvrir les dates sélectionnées</button>' +
       '</div>';
 
-    var closedList = catalogue.closedDates || [];
+    var closedList = (catalogue.closedDates || []).slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    html += '<div class="field" style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px;">' +
+      '<label>Dates actuellement fermées</label>';
     if (closedList.length){
-      html += '<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px;">';
-      closedList.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; }).forEach(function (cd) {
-        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:0.86rem;">' +
-          '<span>' + cd.date + (cd.reason ? " — " + cd.reason : "") + '</span>' +
-          '<button type="button" class="btn btn-secondary btn-small" data-reopen-date="' + cd.date + '">Rouvrir</button>' +
-          '</div>';
-      });
-      html += '</div>';
+      html += '<select id="closed-dates-select" multiple size="' + Math.min(closedList.length, 6) + '" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:0.86rem;">' +
+        closedList.map(function (cd) {
+          return '<option value="' + cd.date + '">' + cd.date + (cd.reason ? " — " + cd.reason : "") + '</option>';
+        }).join("") +
+        '</select>' +
+        '<button type="button" class="btn btn-secondary btn-small" id="reopen-from-select-btn" style="margin-top:8px;">Rouvrir la sélection</button>';
+    } else {
+      html += '<p class="help" style="margin-top:0;">Aucune date fermée à venir.</p>';
     }
+    html += '</div>';
     html += '</div>';
     root.innerHTML = html;
 
@@ -441,13 +450,15 @@
       adminSelectedDates = {};
       renderClosedEditor();
     });
-    root.querySelectorAll("[data-reopen-date]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var iso = btn.getAttribute("data-reopen-date");
-        catalogue.closedDates = (catalogue.closedDates || []).filter(function (cd) { return cd.date !== iso; });
+    var reopenFromSelectBtn = document.getElementById("reopen-from-select-btn");
+    if (reopenFromSelectBtn){
+      reopenFromSelectBtn.addEventListener("click", function () {
+        var select = document.getElementById("closed-dates-select");
+        var toRemove = Array.prototype.map.call(select.selectedOptions, function (opt) { return opt.value; });
+        catalogue.closedDates = (catalogue.closedDates || []).filter(function (cd) { return toRemove.indexOf(cd.date) === -1; });
         renderClosedEditor();
       });
-    });
+    }
   }
 
   function readClosedEditor(){
