@@ -1,7 +1,12 @@
 {
   "photoVersion": 1,
   "promoCodes": [],
-  "closedDates": [],
+  "closedDates": [
+    {
+      "date": "2026-09-06",
+      "reason": ""
+    }
+  ],
   "components": [
     {
       "id": "palmes",
@@ -12,9 +17,9 @@
         "Taille 3"
       ],
       "stock": {
-        "Taille 1": null,
+        "Taille 1": 4,
         "Taille 2": 8,
-        "Taille 3": null
+        "Taille 3": 2
       }
     },
     {
@@ -25,8 +30,8 @@
         "Adulte"
       ],
       "stock": {
-        "Enfant": null,
-        "Adulte": null
+        "Enfant": 2,
+        "Adulte": 6
       }
     },
     {
@@ -38,9 +43,9 @@
         "M/L"
       ],
       "stock": {
-        "XS (enfant)": null,
-        "S/M": null,
-        "M/L": null
+        "XS (enfant)": 2,
+        "S/M": 4,
+        "M/L": 4
       }
     },
     {
@@ -53,13 +58,13 @@
       "id": "glaciere-mat",
       "name": "Glacière",
       "sizes": null,
-      "stock": 5
+      "stock": 3
     },
     {
       "id": "parasol-mat",
       "name": "Parasol",
       "sizes": null,
-      "stock": 5
+      "stock": 3
     }
   ],
   "groups": [
