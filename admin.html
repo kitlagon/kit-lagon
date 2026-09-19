@@ -79,6 +79,17 @@
   .promo-row, .closed-row{display:grid;grid-template-columns:1fr 90px 1fr 1fr auto;gap:8px;align-items:center;margin-bottom:10px;}
   .promo-row input, .closed-row input{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:0.86rem;}
   .closed-row{grid-template-columns:1fr 2fr auto;}
+
+  .admin-cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .admin-cal-header span{font-family:'Fraunces',serif;font-size:0.98rem;text-transform:capitalize;}
+  .admin-cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:0.72rem;color:var(--ink-soft);margin-bottom:4px;}
+  .admin-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+  .admin-cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border:none;background:none;border-radius:8px;font-size:0.84rem;cursor:pointer;color:var(--ink);font-family:inherit;}
+  .admin-cal-day:hover:not(:disabled):not(.admin-cal-empty){background:var(--sand);}
+  .admin-cal-day.admin-cal-past{opacity:0.3;cursor:not-allowed;}
+  .admin-cal-day.admin-cal-selected{background:var(--lagoon-bright);color:white;font-weight:500;}
+  .admin-cal-day.admin-cal-closed{color:var(--coral);text-decoration:line-through;}
+  .admin-cal-day.admin-cal-closed.admin-cal-selected{background:var(--coral);color:white;text-decoration:none;}
 </style>
 </head>
 <body>
@@ -331,29 +342,109 @@
     });
   }
 
+  var adminCalMonth = new Date();
+  adminCalMonth.setDate(1);
+  var adminSelectedDates = {};
+  var ADMIN_MOIS_FR = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+
+  function adminTodayISO(){
+    var now = new Date();
+    return now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+  }
+  function adminIsoOf(y, m, d){
+    return y + "-" + String(m + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+  }
+  function isDateClosed(iso){
+    return (catalogue.closedDates || []).some(function (c) { return c.date === iso; });
+  }
+
   function renderClosedEditor(){
     var root = document.getElementById("closed-editor");
-    var html = '<div class="panel"><h2>Jours fermés (vacances, indisponibilités)</h2><p class="help" style="margin-top:0;margin-bottom:14px;">Ces dates seront bloquées dans le calendrier de réservation du site. Pour rouvrir une date, supprimez-la simplement de la liste.</p>';
-    (catalogue.closedDates || []).forEach(function (cd, ci) {
-      html += '<div class="closed-row" data-ci="' + ci + '">' +
-        '<input type="date" class="closed-date" value="' + (cd.date || "") + '">' +
-        '<input type="text" class="closed-reason" placeholder="Raison (ex. Vacances)" value="' + (cd.reason || "").replace(/"/g, "&quot;") + '">' +
-        '<button type="button" class="btn btn-secondary btn-small" data-remove-closed="' + ci + '">Rouvrir</button>' +
-        '</div>';
-    });
-    html += '<button type="button" class="btn btn-secondary btn-small" id="add-closed-btn">+ Fermer une date</button>';
+    var today = adminTodayISO();
+    var y = adminCalMonth.getFullYear();
+    var m = adminCalMonth.getMonth();
+    var firstDay = new Date(y, m, 1).getDay();
+    var offset = firstDay === 0 ? 6 : firstDay - 1;
+    var daysInMonth = new Date(y, m + 1, 0).getDate();
+    var currentMonthStr = today.slice(0, 7);
+    var displayedMonthStr = y + "-" + String(m + 1).padStart(2, "0");
+
+    var grid = "";
+    for (var e = 0; e < offset; e++) grid += '<span class="admin-cal-day admin-cal-empty"></span>';
+    for (var d = 1; d <= daysInMonth; d++){
+      var iso = adminIsoOf(y, m, d);
+      var past = iso < today;
+      var closed = isDateClosed(iso);
+      var selected = !!adminSelectedDates[iso];
+      var classes = "admin-cal-day";
+      if (closed) classes += " admin-cal-closed";
+      if (selected) classes += " admin-cal-selected";
+      if (past) classes += " admin-cal-past";
+      grid += '<button type="button" class="' + classes + '" data-iso="' + iso + '"' + (past ? " disabled" : "") + '>' + d + '</button>';
+    }
+
+    var html = '<div class="panel"><h2>Calendrier — jours fermés</h2>' +
+      '<p class="help" style="margin-top:0;margin-bottom:14px;">Sélectionnez une ou plusieurs dates (elles se surlignent), puis fermez-les ou rouvrez-les en une fois. Les dates fermées apparaissent en rouge barré.</p>' +
+      '<div class="admin-cal-header">' +
+        '<button type="button" class="btn btn-secondary btn-small" id="admin-cal-prev"' + (displayedMonthStr <= currentMonthStr ? " disabled" : "") + '>‹</button>' +
+        '<span>' + ADMIN_MOIS_FR[m] + " " + y + '</span>' +
+        '<button type="button" class="btn btn-secondary btn-small" id="admin-cal-next">›</button>' +
+      '</div>' +
+      '<div class="admin-cal-weekdays"><span>Lu</span><span>Ma</span><span>Me</span><span>Je</span><span>Ve</span><span>Sa</span><span>Di</span></div>' +
+      '<div class="admin-cal-grid" id="admin-cal-grid">' + grid + '</div>' +
+      '<div class="field" style="margin-top:14px;"><label>Raison (appliquée aux dates fermées)</label><input type="text" id="closed-reason-input" placeholder="Vacances, jour férié..."></div>' +
+      '<div style="display:flex;gap:10px;margin-top:10px;">' +
+        '<button type="button" class="btn btn-secondary btn-small" id="close-selected-btn">Fermer les dates sélectionnées</button>' +
+        '<button type="button" class="btn btn-secondary btn-small" id="reopen-selected-btn">Rouvrir les dates sélectionnées</button>' +
+      '</div>';
+
+    var closedList = catalogue.closedDates || [];
+    if (closedList.length){
+      html += '<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px;">';
+      closedList.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; }).forEach(function (cd) {
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:0.86rem;">' +
+          '<span>' + cd.date + (cd.reason ? " — " + cd.reason : "") + '</span>' +
+          '<button type="button" class="btn btn-secondary btn-small" data-reopen-date="' + cd.date + '">Rouvrir</button>' +
+          '</div>';
+      });
+      html += '</div>';
+    }
     html += '</div>';
     root.innerHTML = html;
 
-    document.getElementById("add-closed-btn").addEventListener("click", function () {
-      readClosedEditor();
-      catalogue.closedDates.push({ date: "", reason: "" });
+    document.getElementById("admin-cal-prev").addEventListener("click", function () {
+      adminCalMonth.setMonth(adminCalMonth.getMonth() - 1);
       renderClosedEditor();
     });
-    root.querySelectorAll("[data-remove-closed]").forEach(function (btn) {
+    document.getElementById("admin-cal-next").addEventListener("click", function () {
+      adminCalMonth.setMonth(adminCalMonth.getMonth() + 1);
+      renderClosedEditor();
+    });
+    document.getElementById("admin-cal-grid").addEventListener("click", function (e) {
+      var btn = e.target.closest(".admin-cal-day[data-iso]");
+      if (!btn || btn.disabled) return;
+      var iso = btn.getAttribute("data-iso");
+      if (adminSelectedDates[iso]) delete adminSelectedDates[iso]; else adminSelectedDates[iso] = true;
+      renderClosedEditor();
+    });
+    document.getElementById("close-selected-btn").addEventListener("click", function () {
+      var reason = document.getElementById("closed-reason-input").value.trim();
+      if (!catalogue.closedDates) catalogue.closedDates = [];
+      Object.keys(adminSelectedDates).forEach(function (iso) {
+        if (!isDateClosed(iso)) catalogue.closedDates.push({ date: iso, reason: reason });
+      });
+      adminSelectedDates = {};
+      renderClosedEditor();
+    });
+    document.getElementById("reopen-selected-btn").addEventListener("click", function () {
+      catalogue.closedDates = (catalogue.closedDates || []).filter(function (cd) { return !adminSelectedDates[cd.date]; });
+      adminSelectedDates = {};
+      renderClosedEditor();
+    });
+    root.querySelectorAll("[data-reopen-date]").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        readClosedEditor();
-        catalogue.closedDates.splice(parseInt(btn.getAttribute("data-remove-closed"), 10), 1);
+        var iso = btn.getAttribute("data-reopen-date");
+        catalogue.closedDates = (catalogue.closedDates || []).filter(function (cd) { return cd.date !== iso; });
         renderClosedEditor();
       });
     });
@@ -361,12 +452,6 @@
 
   function readClosedEditor(){
     if (!catalogue.closedDates) catalogue.closedDates = [];
-    document.querySelectorAll("#closed-editor .closed-row").forEach(function (rowEl, i) {
-      catalogue.closedDates[i] = {
-        date: rowEl.querySelector(".closed-date").value,
-        reason: rowEl.querySelector(".closed-reason").value.trim()
-      };
-    });
   }
 
   function renderStockEditor(){
