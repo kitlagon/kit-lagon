@@ -4,6 +4,24 @@
   "heroSubtitle": "Glacière, parasol, kit snorkeling ou caméra 360° étanche : choisissez vos dates et votre matériel, récupérez-le sur un créneau fixe près de la plage.",
   "promoCodes": [],
   "closedDates": [],
+  "timeSlots": {
+    "windows": [
+      {
+        "start": "07:30",
+        "end": "08:00"
+      },
+      {
+        "start": "12:45",
+        "end": "13:30"
+      },
+      {
+        "start": "17:00",
+        "end": "18:00"
+      }
+    ],
+    "interval": 15
+  },
+  "takenSlots": [],
   "components": [
     {
       "id": "palmes",

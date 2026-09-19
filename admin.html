@@ -124,6 +124,7 @@
   <div id="hero-photo-editor"></div>
   <div id="promo-editor"></div>
   <div id="closed-editor"></div>
+  <div id="slots-editor"></div>
   <div id="stock-editor"></div>
   <div id="editor"></div>
 
@@ -474,6 +475,136 @@
     if (!catalogue.closedDates) catalogue.closedDates = [];
   }
 
+  function toMinutes(hhmm){
+    var p = hhmm.split(":");
+    return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
+  }
+  function fromMinutes(mins){
+    var h = Math.floor(mins / 60), m = mins % 60;
+    return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
+  }
+  function generateSlots(timeSlots){
+    var slots = [];
+    var interval = (timeSlots && timeSlots.interval) || 15;
+    (timeSlots && timeSlots.windows || []).forEach(function (w) {
+      var cur = toMinutes(w.start);
+      var end = toMinutes(w.end);
+      while (cur < end){
+        slots.push(fromMinutes(cur));
+        cur += interval;
+      }
+    });
+    return slots;
+  }
+  function isSlotTaken(date, time){
+    return (catalogue.takenSlots || []).some(function (t) { return t.date === date && t.time === time; });
+  }
+
+  var slotPickerDate = "";
+
+  function renderSlotsEditor(){
+    var root = document.getElementById("slots-editor");
+    if (!catalogue.timeSlots) catalogue.timeSlots = { windows: [], interval: 15 };
+    var windows = catalogue.timeSlots.windows || [];
+
+    var html = '<div class="panel"><h2>Créneaux horaires</h2>' +
+      '<p class="help" style="margin-top:0;margin-bottom:14px;">Les plages ci-dessous définissent les horaires proposés aux clients, découpés par tranches de l\'intervalle choisi. Ajoutez une plage pour ouvrir un nouvel horaire plus tard.</p>';
+
+    windows.forEach(function (w, wi) {
+      html += '<div class="promo-row" style="grid-template-columns:1fr 1fr auto;" data-wi="' + wi + '">' +
+        '<input type="time" class="slot-window-start" value="' + w.start + '">' +
+        '<input type="time" class="slot-window-end" value="' + w.end + '">' +
+        '<button type="button" class="btn btn-secondary btn-small" data-remove-window="' + wi + '">Suppr.</button>' +
+        '</div>';
+    });
+    html += '<button type="button" class="btn btn-secondary btn-small" id="add-window-btn">+ Ajouter une plage horaire</button>' +
+      '<div class="field" style="margin-top:14px;max-width:200px;"><label>Intervalle entre deux créneaux (minutes)</label><input type="number" step="5" min="5" id="slot-interval-input" value="' + (catalogue.timeSlots.interval || 15) + '"></div>' +
+      '</div>';
+
+    html += '<div class="panel"><h2>Créneaux déjà pris</h2>' +
+      '<p class="help" style="margin-top:0;margin-bottom:14px;">Dès que vous confirmez une réservation reçue par e-mail, bloquez son créneau ici pour qu\'il ne soit plus proposé aux autres clients.</p>' +
+      '<div class="date-row" style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;">' +
+        '<div class="field" style="margin-bottom:0;"><label>Date</label><input type="date" id="slot-pick-date" value="' + slotPickerDate + '"></div>' +
+        '<div class="field" style="margin-bottom:0;"><label>Créneau</label><select id="slot-pick-time"></select></div>' +
+        '<button type="button" class="btn btn-secondary btn-small" id="block-slot-btn">Bloquer ce créneau</button>' +
+      '</div>';
+
+    var takenList = (catalogue.takenSlots || []).slice().sort(function (a, b) { return (a.date + a.time) < (b.date + b.time) ? -1 : 1; });
+    if (takenList.length){
+      html += '<div class="field" style="margin-top:14px;">' +
+        '<label>Créneaux actuellement bloqués</label>' +
+        '<select id="taken-slots-select" multiple size="' + Math.min(takenList.length, 6) + '" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:0.86rem;">' +
+        takenList.map(function (t) { return '<option value="' + t.date + '|' + t.time + '">' + t.date + " à " + t.time + '</option>'; }).join("") +
+        '</select>' +
+        '<button type="button" class="btn btn-secondary btn-small" id="unblock-slots-btn" style="margin-top:8px;">Libérer la sélection</button>' +
+        '</div>';
+    } else {
+      html += '<p class="help" style="margin-top:14px;margin-bottom:0;">Aucun créneau bloqué actuellement.</p>';
+    }
+    html += '</div>';
+    root.innerHTML = html;
+
+    document.getElementById("add-window-btn").addEventListener("click", function () {
+      readSlotsEditor();
+      catalogue.timeSlots.windows.push({ start: "09:00", end: "09:30" });
+      renderSlotsEditor();
+    });
+    root.querySelectorAll("[data-remove-window]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        readSlotsEditor();
+        catalogue.timeSlots.windows.splice(parseInt(btn.getAttribute("data-remove-window"), 10), 1);
+        renderSlotsEditor();
+      });
+    });
+
+    function refreshTimeOptions(){
+      var dateInput = document.getElementById("slot-pick-date");
+      var timeSelect = document.getElementById("slot-pick-time");
+      slotPickerDate = dateInput.value;
+      var slots = generateSlots(catalogue.timeSlots).filter(function (t) { return !isSlotTaken(slotPickerDate, t); });
+      timeSelect.innerHTML = slots.length
+        ? slots.map(function (t) { return '<option value="' + t + '">' + t + '</option>'; }).join("")
+        : '<option value="">Aucun créneau libre</option>';
+    }
+    document.getElementById("slot-pick-date").addEventListener("change", refreshTimeOptions);
+    refreshTimeOptions();
+
+    document.getElementById("block-slot-btn").addEventListener("click", function () {
+      var date = document.getElementById("slot-pick-date").value;
+      var time = document.getElementById("slot-pick-time").value;
+      if (!date || !time) return;
+      if (!catalogue.takenSlots) catalogue.takenSlots = [];
+      if (!isSlotTaken(date, time)) catalogue.takenSlots.push({ date: date, time: time });
+      renderSlotsEditor();
+    });
+
+    var unblockBtn = document.getElementById("unblock-slots-btn");
+    if (unblockBtn){
+      unblockBtn.addEventListener("click", function () {
+        var select = document.getElementById("taken-slots-select");
+        var toRemove = Array.prototype.map.call(select.selectedOptions, function (opt) { return opt.value; });
+        catalogue.takenSlots = (catalogue.takenSlots || []).filter(function (t) {
+          return toRemove.indexOf(t.date + "|" + t.time) === -1;
+        });
+        renderSlotsEditor();
+      });
+    }
+  }
+
+  function readSlotsEditor(){
+    if (!catalogue.timeSlots) catalogue.timeSlots = { windows: [], interval: 15 };
+    var windows = [];
+    document.querySelectorAll("#slots-editor .promo-row[data-wi]").forEach(function (rowEl) {
+      windows.push({
+        start: rowEl.querySelector(".slot-window-start").value,
+        end: rowEl.querySelector(".slot-window-end").value
+      });
+    });
+    catalogue.timeSlots.windows = windows;
+    var intervalInput = document.getElementById("slot-interval-input");
+    if (intervalInput) catalogue.timeSlots.interval = parseInt(intervalInput.value, 10) || 15;
+  }
+
   function renderStockEditor(){
     var root = document.getElementById("stock-editor");
     var html = '<div class="panel"><h2>Stock des composants</h2><p class="help" style="margin-top:0;margin-bottom:14px;">Ce stock est partagé entre tous les produits qui utilisent ce composant (ex : les palmes d\'une taille servent aussi bien en location seule qu\'en kit PMT).</p>';
@@ -519,6 +650,7 @@
     renderHeroPhotoEditor();
     renderPromoEditor();
     renderClosedEditor();
+    renderSlotsEditor();
     renderStockEditor();
     var root = document.getElementById("editor");
     var html = "";
@@ -568,6 +700,7 @@
     readStockEditor();
     readPromoEditor();
     readClosedEditor();
+    readSlotsEditor();
     document.querySelectorAll(".group-block").forEach(function (groupEl) {
       var gi = parseInt(groupEl.getAttribute("data-gi"), 10);
       catalogue.groups[gi].group = groupEl.querySelector(".group-name").value.trim();

@@ -118,12 +118,44 @@
     return flat;
   }
 
+  function toMinutes(hhmm){
+    var p = hhmm.split(":");
+    return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
+  }
+  function fromMinutes(mins){
+    var h = Math.floor(mins / 60), m = mins % 60;
+    return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
+  }
+  function generateSlots(timeSlots){
+    var slots = [];
+    var interval = (timeSlots && timeSlots.interval) || 15;
+    (timeSlots && timeSlots.windows || []).forEach(function (w) {
+      var cur = toMinutes(w.start);
+      var end = toMinutes(w.end);
+      while (cur < end){
+        slots.push(fromMinutes(cur));
+        cur += interval;
+      }
+    });
+    return slots;
+  }
+
   document.getElementById("content").innerHTML = '<p style="color:var(--ink-soft);">Chargement...</p>';
   fetch("products.json")
     .then(function (r) { return r.json(); })
     .then(function (data) {
       catalogue = flattenCatalogue(data.groups);
       var promoCodes = data.promoCodes || [];
+      var timeSlots = data.timeSlots || { windows: [], interval: 15 };
+      var takenSlots = data.takenSlots || [];
+
+      function isSlotTaken(date, time){
+        return takenSlots.some(function (t) { return t.date === date && t.time === time; });
+      }
+      function availableSlotsFor(date){
+        if (!date) return [];
+        return generateSlots(timeSlots).filter(function (t) { return !isSlotTaken(date, t); });
+      }
 
       var params = new URLSearchParams(window.location.search);
       var retrait = params.get("retrait") || "";
@@ -170,6 +202,24 @@
       }
 
       var appliedPromo = null;
+      var selectedRetraitSlot = "";
+      var selectedRetourSlot = "";
+
+      function slotSelectHtml(id, date, which){
+        if (!date) return '<p class="help" style="font-size:0.82rem;color:var(--ink-soft);margin:0;">Choisissez cette date sur la page précédente.</p>';
+        var slots = availableSlotsFor(date);
+        if (slots.length === 0){
+          var subject = encodeURIComponent("Créneau — aucune disponibilité");
+          var body = encodeURIComponent("Bonjour Kit Lagon,\n\nAucun créneau n'est disponible le " + formatDate(date) + ". Avez-vous une autre possibilité ?\n\nMerci !");
+          return '<p class="caution-note" style="margin:0;">Aucun créneau disponible ce jour — <a href="mailto:contact@kitlagon.re?subject=' + subject + '&body=' + body + '">nous contacter</a></p>';
+        }
+        var current = which === "retrait" ? selectedRetraitSlot : selectedRetourSlot;
+        if (slots.indexOf(current) === -1) current = slots[0];
+        if (which === "retrait") selectedRetraitSlot = current; else selectedRetourSlot = current;
+        return '<select id="' + id + '">' + slots.map(function (t) {
+          return '<option value="' + t + '"' + (t === current ? " selected" : "") + '>' + t + '</option>';
+        }).join("") + '</select>';
+      }
 
       function findValidPromo(codeInput){
         var code = codeInput.trim().toUpperCase();
@@ -238,10 +288,17 @@
           (days ? '<div><strong>Durée</strong>' + days + ' jour' + (days > 1 ? "s" : "") + '</div>' : '') +
           '</div>';
 
+        var slotsHtml = '<div class="contact-panel">' +
+          '<h3>Créneaux horaires</h3>' +
+          '<div class="field"><label>Créneau de retrait</label>' + slotSelectHtml("slot-retrait", retrait, "retrait") + '</div>' +
+          '<div class="field" style="margin-bottom:0;"><label>Créneau de retour</label>' + slotSelectHtml("slot-retour", retour, "retour") + '</div>' +
+          '</div>';
+
         content.innerHTML =
           '<h1>Votre panier</h1>' +
           '<p class="subtitle">Vérifiez votre sélection avant d\u2019envoyer votre demande.</p>' +
           datesSummary +
+          slotsHtml +
           itemsHtml +
           '<div class="cart-total"><span>Sous-total' + (tierIndex === null ? ' (estimation)' : '') + '</span><span>' + subtotal + ' €</span></div>' +
           promoLineHtml +
@@ -283,6 +340,11 @@
           promoRemoveBtn.addEventListener("click", function () { appliedPromo = null; render(); });
         }
 
+        var slotRetraitEl = document.getElementById("slot-retrait");
+        if (slotRetraitEl) slotRetraitEl.addEventListener("change", function () { selectedRetraitSlot = this.value; });
+        var slotRetourEl = document.getElementById("slot-retour");
+        if (slotRetourEl) slotRetourEl.addEventListener("change", function () { selectedRetourSlot = this.value; });
+
         document.getElementById("send-btn").addEventListener("click", function () {
           var nom = document.getElementById("client-nom").value.trim();
           var email = document.getElementById("client-email").value.trim();
@@ -303,8 +365,8 @@
             mailLines.join("\n"),
             "",
             appliedPromo ? ("Code promo : " + appliedPromo.code + " (-" + Math.round(appliedPromo.discount * 100) + "%)") : "",
-            "Date de retrait : " + (retrait || "à préciser"),
-            "Date de retour : " + (retour || "à préciser"),
+            "Date de retrait : " + (retrait || "à préciser") + (selectedRetraitSlot ? " à " + selectedRetraitSlot : ""),
+            "Date de retour : " + (retour || "à préciser") + (selectedRetourSlot ? " à " + selectedRetourSlot : ""),
             "",
             "Nom : " + (nom || "à préciser"),
             "E-mail : " + (email || "à préciser"),
