@@ -1,9 +1,24 @@
 {
   "photoVersion": 1,
-  "promoCodes": [],
+  "promoCodes": [
+    {
+      "code": "",
+      "discount": 0.1,
+      "from": "",
+      "to": ""
+    }
+  ],
   "closedDates": [
     {
       "date": "2026-09-06",
+      "reason": ""
+    },
+    {
+      "date": "2026-09-27",
+      "reason": ""
+    },
+    {
+      "date": "2026-09-13",
       "reason": ""
     }
   ],
