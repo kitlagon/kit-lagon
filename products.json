@@ -1,27 +1,9 @@
 {
   "photoVersion": 1,
-  "promoCodes": [
-    {
-      "code": "",
-      "discount": 0.1,
-      "from": "",
-      "to": ""
-    }
-  ],
-  "closedDates": [
-    {
-      "date": "2026-09-06",
-      "reason": ""
-    },
-    {
-      "date": "2026-09-27",
-      "reason": ""
-    },
-    {
-      "date": "2026-09-13",
-      "reason": ""
-    }
-  ],
+  "heroTitle": "Le lagon vous attend, pas besoin de tout apporter",
+  "heroSubtitle": "Glacière, parasol, kit snorkeling ou caméra 360° étanche : choisissez vos dates et votre matériel, récupérez-le sur un créneau fixe près de la plage.",
+  "promoCodes": [],
+  "closedDates": [],
   "components": [
     {
       "id": "palmes",
@@ -32,9 +14,9 @@
         "Taille 3"
       ],
       "stock": {
-        "Taille 1": 4,
+        "Taille 1": null,
         "Taille 2": 8,
-        "Taille 3": 2
+        "Taille 3": null
       }
     },
     {
@@ -45,8 +27,8 @@
         "Adulte"
       ],
       "stock": {
-        "Enfant": 2,
-        "Adulte": 6
+        "Enfant": null,
+        "Adulte": null
       }
     },
     {
@@ -58,9 +40,9 @@
         "M/L"
       ],
       "stock": {
-        "XS (enfant)": 2,
-        "S/M": 4,
-        "M/L": 4
+        "XS (enfant)": null,
+        "S/M": null,
+        "M/L": null
       }
     },
     {
@@ -73,13 +55,13 @@
       "id": "glaciere-mat",
       "name": "Glacière",
       "sizes": null,
-      "stock": 3
+      "stock": 5
     },
     {
       "id": "parasol-mat",
       "name": "Parasol",
       "sizes": null,
-      "stock": 3
+      "stock": 5
     }
   ],
   "groups": [

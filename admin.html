@@ -120,6 +120,7 @@
     <p class="status" id="auth-status"></p>
   </div>
 
+  <div id="hero-text-editor"></div>
   <div id="hero-photo-editor"></div>
   <div id="promo-editor"></div>
   <div id="closed-editor"></div>
@@ -265,6 +266,14 @@
   function componentLabel(comp, item){
     var req = (item.components || []).filter(function (c) { return c.id === comp.id; })[0];
     return req ? comp.name + (req.needsSize ? " (tailles)" : "") : null;
+  }
+
+  function renderHeroTextEditor(){
+    var root = document.getElementById("hero-text-editor");
+    root.innerHTML = '<div class="panel"><h2>Texte d\'accueil (bandeau du haut)</h2>' +
+      '<div class="field"><label>Titre</label><input type="text" id="hero-title-input" value="' + (catalogue.heroTitle || "").replace(/"/g, "&quot;") + '"></div>' +
+      '<div class="field" style="margin-bottom:0;"><label>Sous-titre</label><textarea id="hero-subtitle-input" rows="2">' + (catalogue.heroSubtitle || "") + '</textarea></div>' +
+      '</div>';
   }
 
   function renderHeroPhotoEditor(){
@@ -506,6 +515,7 @@
   }
 
   function renderEditor(){
+    renderHeroTextEditor();
     renderHeroPhotoEditor();
     renderPromoEditor();
     renderClosedEditor();
@@ -551,6 +561,10 @@
   }
 
   function readEditorIntoCatalogue(){
+    var heroTitleInput = document.getElementById("hero-title-input");
+    var heroSubtitleInput = document.getElementById("hero-subtitle-input");
+    if (heroTitleInput) catalogue.heroTitle = heroTitleInput.value.trim();
+    if (heroSubtitleInput) catalogue.heroSubtitle = heroSubtitleInput.value.trim();
     readStockEditor();
     readPromoEditor();
     readClosedEditor();
