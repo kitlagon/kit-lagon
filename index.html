@@ -118,6 +118,8 @@
   .product-price .total-line{font-size:0.78rem;color:var(--lagoon-deep);font-weight:500;margin-top:2px;}
   .product-caution{font-size:0.76rem;color:var(--coral);}
   .qty-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px;}
+  .qty-block{display:flex;flex-direction:column;gap:8px;margin-top:4px;}
+  .qty-block .add-btn{width:100%;text-align:center;}
   .qty-control{display:flex;align-items:center;border:1px solid var(--line);border-radius:100px;overflow:hidden;}
   .qty-control button{background:none;border:none;width:30px;height:30px;font-size:1.05rem;cursor:pointer;color:var(--ink);}
   .qty-control span{min-width:20px;text-align:center;font-size:0.88rem;}
@@ -457,12 +459,13 @@
         if (sizedComponents.length === 0){
           var qty0 = cart[cartKey(item.id, {})] || 0;
           var blockedNone = canAdd(item, {}, 1, usage);
-          html += '<div class="qty-row">' +
+          html += '<div class="qty-block">' +
             '<div class="qty-control">' +
               '<button type="button" data-action="dec" data-product="' + item.id + '" data-sizes="{}">−</button>' +
               '<span>' + qty0 + '</span>' +
               '<button type="button" data-action="inc" data-product="' + item.id + '" data-sizes="{}"' + (blockedNone && qty0 === 0 ? ' disabled' : '') + '>+</button>' +
             '</div>' +
+            '<button type="button" class="add-btn" data-action="inc" data-product="' + item.id + '" data-sizes="{}"' + (blockedNone && qty0 === 0 ? ' disabled' : '') + '>' + (qty0 > 0 ? "Dans le panier" : "Ajouter au panier") + '</button>' +
           '</div>';
           if (blockedNone){
             html += '<div class="product-caution" style="color:var(--coral);">Stock complet (' + componentLabel(blockedNone.componentId, blockedNone.size) + ') — <a href="' + contactMailto(item.name) + '">nous contacter</a></div>';
@@ -479,7 +482,7 @@
             });
             html += '</select></div>';
           });
-          html += '<div class="qty-row"><div class="qty-control"><button type="button" class="size-add-btn" data-product="' + item.id + '" title="Ajouter cette combinaison">+</button></div></div>' +
+          html += '<div class="qty-row"><button type="button" class="add-btn size-add-btn" data-product="' + item.id + '">Ajouter au panier</button></div>' +
             '<div class="size-picker-msg" data-product="' + item.id + '"></div>';
 
           var existingLines = Object.keys(cart)
