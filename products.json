@@ -90,7 +90,7 @@
         {
           "id": "glaciere",
           "name": "Glacière + pain de glace",
-          "desc": "Pour garder boissons et pique-nique au frais.",
+          "desc": "Pour garder boissons et pique-nique au frais. Composer d'un sac isotherme et de 2 pains de glace de 370g",
           "prices": [
             7,
             5.5,
@@ -108,7 +108,7 @@
         {
           "id": "parasol",
           "name": "Parasol + pied",
-          "desc": "Pour s'abriter du soleil, à installer vous-même.",
+          "desc": "Pour s'abriter du soleil, à installer vous-même. Parasol de plage par UV tissu UPF 50+, dimension : 2 places",
           "prices": [
             6,
             4.5,
