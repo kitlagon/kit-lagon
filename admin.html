@@ -650,39 +650,102 @@
 
   function renderStockEditor(){
     var root = document.getElementById("stock-editor");
-    var html = '<div class="panel"><h2>Stock des composants</h2><p class="help" style="margin-top:0;margin-bottom:14px;">Ce stock est partagé entre tous les produits qui utilisent ce composant (ex : les palmes d\'une taille servent aussi bien en location seule qu\'en kit PMT).</p>';
+    var html = '<div class="panel"><h2>Stock des composants</h2><p class="help" style="margin-top:0;margin-bottom:14px;">Ce stock est partagé entre tous les produits qui utilisent ce composant (ex : les palmes d\'une taille servent aussi bien en location seule qu\'en kit PMT). Le nom et les tailles sont modifiables ; l\'identifiant technique reste fixe et sert de référence interne.</p>';
     catalogue.components.forEach(function (comp, ci) {
-      html += '<div class="field" data-ci="' + ci + '"><label>' + comp.name + '</label>';
-      if (comp.sizes && comp.sizes.length){
-        html += '<div class="price-row" style="grid-template-columns:repeat(' + comp.sizes.length + ', 1fr);">';
-        comp.sizes.forEach(function (size) {
+      html += '<div class="field" data-ci="' + ci + '" style="border-bottom:1px solid var(--line);padding-bottom:14px;">';
+      html += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">' +
+        '<input type="text" class="comp-name" value="' + comp.name.replace(/"/g, "&quot;") + '" style="flex:1;">' +
+        '<label style="font-size:0.78rem;display:flex;align-items:center;gap:4px;white-space:nowrap;color:var(--ink-soft);">' +
+          '<input type="checkbox" class="comp-has-sizes"' + (comp.sizes ? " checked" : "") + '> Tailles</label>' +
+        '<button type="button" class="btn btn-secondary btn-small" data-remove-component="' + ci + '">Supprimer</button>' +
+        '</div>' +
+        '<div class="item-id" style="margin-bottom:8px;">Identifiant technique : ' + comp.id + ' (fixe)</div>';
+
+      if (comp.sizes){
+        comp.sizes.forEach(function (size, si) {
           var val = comp.stock && comp.stock[size] != null ? comp.stock[size] : "";
-          html += '<div class="field"><label style="font-size:0.72rem;">' + size + '</label><input type="number" step="1" class="comp-stock-size" data-size="' + size.replace(/"/g, "&quot;") + '" value="' + val + '" placeholder="illimité"></div>';
+          html += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">' +
+            '<input type="text" class="comp-size-name" value="' + size.replace(/"/g, "&quot;") + '" style="flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:0.86rem;">' +
+            '<input type="number" step="1" class="comp-size-stock" value="' + val + '" placeholder="illimité" style="width:110px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:0.86rem;">' +
+            '<button type="button" class="btn btn-secondary btn-small" data-remove-size="' + ci + ':' + si + '">Suppr.</button>' +
+            '</div>';
         });
-        html += '</div>';
+        html += '<button type="button" class="btn btn-secondary btn-small" data-add-size="' + ci + '">+ Ajouter une taille</button>';
       } else {
         var flatVal = comp.stock != null ? comp.stock : "";
         html += '<input type="number" step="1" class="comp-stock-flat" value="' + flatVal + '" placeholder="illimité">';
       }
       html += '</div>';
     });
+    html += '<button type="button" class="btn btn-secondary btn-small" id="add-component-btn" style="margin-top:6px;">+ Ajouter un composant</button>';
     html += '</div>';
     root.innerHTML = html;
+
+    root.querySelectorAll("[data-add-size]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        readStockEditor();
+        var ci = parseInt(btn.getAttribute("data-add-size"), 10);
+        var comp = catalogue.components[ci];
+        var newSize = "Nouvelle taille";
+        comp.sizes.push(newSize);
+        if (!comp.stock) comp.stock = {};
+        comp.stock[newSize] = null;
+        renderStockEditor();
+      });
+    });
+    root.querySelectorAll("[data-remove-size]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        readStockEditor();
+        var parts = btn.getAttribute("data-remove-size").split(":");
+        var ci = parseInt(parts[0], 10), si = parseInt(parts[1], 10);
+        var comp = catalogue.components[ci];
+        var removed = comp.sizes.splice(si, 1)[0];
+        if (comp.stock) delete comp.stock[removed];
+        renderStockEditor();
+      });
+    });
+    root.querySelectorAll("[data-remove-component]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        readStockEditor();
+        var ci = parseInt(btn.getAttribute("data-remove-component"), 10);
+        if (confirm("Supprimer ce composant ? Les produits qui l'utilisent encore ne fonctionneront plus correctement.")){
+          catalogue.components.splice(ci, 1);
+          renderStockEditor();
+        }
+      });
+    });
+    document.getElementById("add-component-btn").addEventListener("click", function () {
+      readStockEditor();
+      var name = prompt("Nom du nouveau composant :");
+      if (!name) return;
+      catalogue.components.push({ id: slugify(name), name: name, sizes: null, stock: null });
+      renderStockEditor();
+    });
   }
 
   function readStockEditor(){
     document.querySelectorAll('#stock-editor .field[data-ci]').forEach(function (fieldEl) {
       var ci = parseInt(fieldEl.getAttribute("data-ci"), 10);
       var comp = catalogue.components[ci];
-      if (comp.sizes && comp.sizes.length){
+      comp.name = fieldEl.querySelector(".comp-name").value.trim();
+      var hasSizes = fieldEl.querySelector(".comp-has-sizes").checked;
+
+      if (hasSizes){
+        var sizeNames = [];
         var stock = {};
-        fieldEl.querySelectorAll(".comp-stock-size").forEach(function (input) {
-          var v = input.value.trim();
-          stock[input.getAttribute("data-size")] = v === "" ? null : parseInt(v, 10);
+        fieldEl.querySelectorAll(".comp-size-name").forEach(function (nameInput, si) {
+          var sizeName = nameInput.value.trim();
+          var stockInputs = fieldEl.querySelectorAll(".comp-size-stock");
+          var v = stockInputs[si].value.trim();
+          sizeNames.push(sizeName);
+          stock[sizeName] = v === "" ? null : parseInt(v, 10);
         });
+        comp.sizes = sizeNames;
         comp.stock = stock;
       } else {
-        var flat = fieldEl.querySelector(".comp-stock-flat").value.trim();
+        comp.sizes = null;
+        var flatInput = fieldEl.querySelector(".comp-stock-flat");
+        var flat = flatInput ? flatInput.value.trim() : "";
         comp.stock = flat === "" ? null : parseInt(flat, 10);
       }
     });
