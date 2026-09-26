@@ -495,8 +495,7 @@
           '<img class="product-image" src="images/kits/' + item.id + '.jpg?v=' + (catalogue.photoVersion || 1) + '" alt="' + item.name + '" onerror="this.remove()">' +
           '<div class="product-name">' + item.name + '</div>' +
           '<p class="product-desc">' + item.desc + '</p>' +
-          '<div class="product-price">' + priceBlock + '</div>' +
-          '<div class="product-caution">Caution ' + item.caution + ' €</div>';
+          '<div class="product-price">' + priceBlock + '</div>';
 
         var sizedComponents = (item.components || []).filter(function (c) { return c.needsSize; });
 
