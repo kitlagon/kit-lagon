@@ -483,10 +483,9 @@
     var h = Math.floor(mins / 60), m = mins % 60;
     return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
   }
-  function generateSlots(timeSlots){
+  function generateSlots(windows, interval){
     var slots = [];
-    var interval = (timeSlots && timeSlots.interval) || 15;
-    (timeSlots && timeSlots.windows || []).forEach(function (w) {
+    (windows || []).forEach(function (w) {
       var cur = toMinutes(w.start);
       var end = toMinutes(w.end);
       while (cur < end){
@@ -500,15 +499,27 @@
     return (catalogue.takenSlots || []).some(function (t) { return t.date === date && t.time === time; });
   }
 
+  var DAY_NAMES_FR = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
+  var DAY_LABELS_FR = { lundi: "Lun", mardi: "Mar", mercredi: "Mer", jeudi: "Jeu", vendredi: "Ven", samedi: "Sam", dimanche: "Dim" };
   var slotPickerDate = "";
+  var slotsEditorDay = "lundi";
 
   function renderSlotsEditor(){
     var root = document.getElementById("slots-editor");
-    if (!catalogue.timeSlots) catalogue.timeSlots = { windows: [], interval: 15 };
-    var windows = catalogue.timeSlots.windows || [];
+    if (!catalogue.timeSlots) catalogue.timeSlots = { interval: 15, byDay: {} };
+    if (!catalogue.timeSlots.byDay) catalogue.timeSlots.byDay = {};
+    DAY_NAMES_FR.forEach(function (d) {
+      if (!catalogue.timeSlots.byDay[d]) catalogue.timeSlots.byDay[d] = [];
+    });
+    var windows = catalogue.timeSlots.byDay[slotsEditorDay] || [];
 
     var html = '<div class="panel"><h2>Créneaux horaires</h2>' +
-      '<p class="help" style="margin-top:0;margin-bottom:14px;">Les plages ci-dessous définissent les horaires proposés aux clients, découpés par tranches de l\'intervalle choisi. Ajoutez une plage pour ouvrir un nouvel horaire plus tard.</p>';
+      '<p class="help" style="margin-top:0;margin-bottom:14px;">Définissez des plages différentes selon le jour de la semaine (ex : ouvrir plus le samedi). Choisissez un jour ci-dessous pour éditer ses plages.</p>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">' +
+      DAY_NAMES_FR.map(function (d) {
+        return '<button type="button" class="btn btn-small ' + (d === slotsEditorDay ? "btn-primary" : "btn-secondary") + '" data-select-day="' + d + '">' + DAY_LABELS_FR[d] + '</button>';
+      }).join("") +
+      '</div>';
 
     windows.forEach(function (w, wi) {
       html += '<div class="promo-row" style="grid-template-columns:1fr 1fr auto;" data-wi="' + wi + '">' +
@@ -517,8 +528,21 @@
         '<button type="button" class="btn btn-secondary btn-small" data-remove-window="' + wi + '">Suppr.</button>' +
         '</div>';
     });
-    html += '<button type="button" class="btn btn-secondary btn-small" id="add-window-btn">+ Ajouter une plage horaire</button>' +
-      '<div class="field" style="margin-top:14px;max-width:200px;"><label>Intervalle entre deux créneaux (minutes)</label><input type="number" step="5" min="5" id="slot-interval-input" value="' + (catalogue.timeSlots.interval || 15) + '"></div>' +
+    if (!windows.length){
+      html += '<p class="help" style="margin-top:0;margin-bottom:10px;">Aucune plage ce jour-là — le site ne proposera aucun créneau pour ' + slotsEditorDay + '.</p>';
+    }
+    html += '<button type="button" class="btn btn-secondary btn-small" id="add-window-btn">+ Ajouter une plage pour ' + slotsEditorDay + '</button>';
+
+    html += '<div class="field" style="margin-top:14px;">' +
+      '<label>Dupliquer les plages de "' + slotsEditorDay + '" vers d\'autres jours</label>' +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">' +
+      DAY_NAMES_FR.filter(function (d) { return d !== slotsEditorDay; }).map(function (d) {
+        return '<label style="font-size:0.82rem;display:flex;align-items:center;gap:4px;"><input type="checkbox" class="dup-day-check" value="' + d + '"> ' + DAY_LABELS_FR[d] + '</label>';
+      }).join("") +
+      '<button type="button" class="btn btn-secondary btn-small" id="duplicate-day-btn">Appliquer</button>' +
+      '</div></div>';
+
+    html += '<div class="field" style="margin-top:14px;max-width:200px;"><label>Intervalle entre deux créneaux (minutes)</label><input type="number" step="5" min="5" id="slot-interval-input" value="' + (catalogue.timeSlots.interval || 15) + '"></div>' +
       '</div>';
 
     html += '<div class="panel"><h2>Créneaux déjà pris</h2>' +
@@ -544,24 +568,42 @@
     html += '</div>';
     root.innerHTML = html;
 
+    root.querySelectorAll("[data-select-day]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        readSlotsEditor();
+        slotsEditorDay = btn.getAttribute("data-select-day");
+        renderSlotsEditor();
+      });
+    });
+
     document.getElementById("add-window-btn").addEventListener("click", function () {
       readSlotsEditor();
-      catalogue.timeSlots.windows.push({ start: "09:00", end: "09:30" });
+      catalogue.timeSlots.byDay[slotsEditorDay].push({ start: "09:00", end: "09:30" });
       renderSlotsEditor();
     });
     root.querySelectorAll("[data-remove-window]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         readSlotsEditor();
-        catalogue.timeSlots.windows.splice(parseInt(btn.getAttribute("data-remove-window"), 10), 1);
+        catalogue.timeSlots.byDay[slotsEditorDay].splice(parseInt(btn.getAttribute("data-remove-window"), 10), 1);
         renderSlotsEditor();
       });
+    });
+
+    document.getElementById("duplicate-day-btn").addEventListener("click", function () {
+      readSlotsEditor();
+      var targets = Array.prototype.map.call(root.querySelectorAll(".dup-day-check:checked"), function (c) { return c.value; });
+      var source = catalogue.timeSlots.byDay[slotsEditorDay].map(function (w) { return { start: w.start, end: w.end }; });
+      targets.forEach(function (d) { catalogue.timeSlots.byDay[d] = source.map(function (w) { return { start: w.start, end: w.end }; }); });
+      renderSlotsEditor();
     });
 
     function refreshTimeOptions(){
       var dateInput = document.getElementById("slot-pick-date");
       var timeSelect = document.getElementById("slot-pick-time");
       slotPickerDate = dateInput.value;
-      var slots = generateSlots(catalogue.timeSlots).filter(function (t) { return !isSlotTaken(slotPickerDate, t); });
+      var dayName = slotPickerDate ? DAY_NAMES_FR[(new Date(slotPickerDate + "T12:00").getDay() + 6) % 7] : null;
+      var dayWindows = dayName ? (catalogue.timeSlots.byDay[dayName] || []) : [];
+      var slots = generateSlots(dayWindows, catalogue.timeSlots.interval || 15).filter(function (t) { return !isSlotTaken(slotPickerDate, t); });
       timeSelect.innerHTML = slots.length
         ? slots.map(function (t) { return '<option value="' + t + '">' + t + '</option>'; }).join("")
         : '<option value="">Aucun créneau libre</option>';
@@ -592,7 +634,8 @@
   }
 
   function readSlotsEditor(){
-    if (!catalogue.timeSlots) catalogue.timeSlots = { windows: [], interval: 15 };
+    if (!catalogue.timeSlots) catalogue.timeSlots = { interval: 15, byDay: {} };
+    if (!catalogue.timeSlots.byDay) catalogue.timeSlots.byDay = {};
     var windows = [];
     document.querySelectorAll("#slots-editor .promo-row[data-wi]").forEach(function (rowEl) {
       windows.push({
@@ -600,7 +643,7 @@
         end: rowEl.querySelector(".slot-window-end").value
       });
     });
-    catalogue.timeSlots.windows = windows;
+    catalogue.timeSlots.byDay[slotsEditorDay] = windows;
     var intervalInput = document.getElementById("slot-interval-input");
     if (intervalInput) catalogue.timeSlots.interval = parseInt(intervalInput.value, 10) || 15;
   }

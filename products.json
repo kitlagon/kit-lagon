@@ -1,25 +1,111 @@
 {
-  "photoVersion": 5,
+  "photoVersion": 1,
   "heroTitle": "Le lagon vous attend, pas besoin de tout apporter",
   "heroSubtitle": "Glacière, parasol, kit snorkeling ou caméra 360° étanche : choisissez vos dates et votre matériel, récupérez-le sur un créneau fixe près de la plage.",
   "promoCodes": [],
   "closedDates": [],
   "timeSlots": {
-    "windows": [
-      {
-        "start": "07:30",
-        "end": "08:15"
-      },
-      {
-        "start": "12:45",
-        "end": "13:45"
-      },
-      {
-        "start": "17:00",
-        "end": "18:00"
-      }
-    ],
-    "interval": 15
+    "interval": 15,
+    "byDay": {
+      "lundi": [
+        {
+          "start": "07:30",
+          "end": "08:00"
+        },
+        {
+          "start": "12:45",
+          "end": "13:30"
+        },
+        {
+          "start": "17:00",
+          "end": "18:00"
+        }
+      ],
+      "mardi": [
+        {
+          "start": "07:30",
+          "end": "08:00"
+        },
+        {
+          "start": "12:45",
+          "end": "13:30"
+        },
+        {
+          "start": "17:00",
+          "end": "18:00"
+        }
+      ],
+      "mercredi": [
+        {
+          "start": "07:30",
+          "end": "08:00"
+        },
+        {
+          "start": "12:45",
+          "end": "13:30"
+        },
+        {
+          "start": "17:00",
+          "end": "18:00"
+        }
+      ],
+      "jeudi": [
+        {
+          "start": "07:30",
+          "end": "08:00"
+        },
+        {
+          "start": "12:45",
+          "end": "13:30"
+        },
+        {
+          "start": "17:00",
+          "end": "18:00"
+        }
+      ],
+      "vendredi": [
+        {
+          "start": "07:30",
+          "end": "08:00"
+        },
+        {
+          "start": "12:45",
+          "end": "13:30"
+        },
+        {
+          "start": "17:00",
+          "end": "18:00"
+        }
+      ],
+      "samedi": [
+        {
+          "start": "07:30",
+          "end": "08:00"
+        },
+        {
+          "start": "12:45",
+          "end": "13:30"
+        },
+        {
+          "start": "17:00",
+          "end": "18:00"
+        }
+      ],
+      "dimanche": [
+        {
+          "start": "07:30",
+          "end": "08:00"
+        },
+        {
+          "start": "12:45",
+          "end": "13:30"
+        },
+        {
+          "start": "17:00",
+          "end": "18:00"
+        }
+      ]
+    }
   },
   "takenSlots": [],
   "components": [
@@ -32,9 +118,9 @@
         "Taille 3"
       ],
       "stock": {
-        "Taille 1": 1,
-        "Taille 2": 2,
-        "Taille 3": 2
+        "Taille 1": null,
+        "Taille 2": 8,
+        "Taille 3": null
       }
     },
     {
@@ -45,8 +131,8 @@
         "Adulte"
       ],
       "stock": {
-        "Enfant": 1,
-        "Adulte": 4
+        "Enfant": null,
+        "Adulte": null
       }
     },
     {
@@ -58,9 +144,9 @@
         "M/L"
       ],
       "stock": {
-        "XS (enfant)": 1,
-        "S/M": 2,
-        "M/L": 2
+        "XS (enfant)": null,
+        "S/M": null,
+        "M/L": null
       }
     },
     {
@@ -73,24 +159,24 @@
       "id": "glaciere-mat",
       "name": "Glacière",
       "sizes": null,
-      "stock": 2
+      "stock": 5
     },
     {
       "id": "parasol-mat",
       "name": "Parasol",
       "sizes": null,
-      "stock": 2
+      "stock": 5
     }
   ],
   "groups": [
     {
       "group": "Pack plage",
-      "note": "",
+      "note": "sans réservation d'emplacement",
       "items": [
         {
           "id": "glaciere",
           "name": "Glacière + pain de glace",
-          "desc": "Pour garder boissons et pique-nique au frais. Composer d'un sac isotherme et de 2 pains de glace de 370g",
+          "desc": "Pour garder boissons et pique-nique au frais.",
           "prices": [
             7,
             5.5,
@@ -108,7 +194,7 @@
         {
           "id": "parasol",
           "name": "Parasol + pied",
-          "desc": "Pour s'abriter du soleil, à installer vous-même. Parasol de plage par UV tissu UPF 50+, dimension : 2 places",
+          "desc": "Pour s'abriter du soleil, à installer vous-même.",
           "prices": [
             6,
             4.5,
