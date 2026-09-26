@@ -183,7 +183,7 @@
             4.5,
             3
           ],
-          "caution": 30,
+          "caution": 20,
           "components": [
             {
               "id": "parasol-mat",
@@ -207,7 +207,7 @@
             13,
             10
           ],
-          "caution": 80,
+          "caution": 50,
           "components": [
             {
               "id": "palmes",
@@ -230,7 +230,7 @@
             13,
             10
           ],
-          "caution": 80,
+          "caution": 50,
           "components": [
             {
               "id": "palmes",
@@ -253,7 +253,7 @@
             8,
             6
           ],
-          "caution": 40,
+          "caution": 25,
           "components": [
             {
               "id": "masque-tuba",
@@ -271,7 +271,7 @@
             8,
             6
           ],
-          "caution": 40,
+          "caution": 25,
           "components": [
             {
               "id": "easybreath",
@@ -289,7 +289,7 @@
             7,
             5
           ],
-          "caution": 40,
+          "caution": 25,
           "components": [
             {
               "id": "palmes",
