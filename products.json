@@ -10,101 +10,84 @@
       "lundi": [
         {
           "start": "07:30",
-          "end": "08:00"
+          "end": "08:15"
         },
         {
           "start": "12:45",
           "end": "13:30"
         },
         {
-          "start": "17:00",
+          "start": "17:15",
           "end": "18:00"
         }
       ],
       "mardi": [
         {
           "start": "07:30",
-          "end": "08:00"
+          "end": "08:15"
         },
         {
           "start": "12:45",
           "end": "13:30"
         },
         {
-          "start": "17:00",
+          "start": "17:15",
           "end": "18:00"
         }
       ],
       "mercredi": [
         {
           "start": "07:30",
-          "end": "08:00"
+          "end": "08:15"
         },
         {
           "start": "12:45",
           "end": "13:30"
         },
         {
-          "start": "17:00",
+          "start": "17:15",
           "end": "18:00"
         }
       ],
       "jeudi": [
         {
           "start": "07:30",
-          "end": "08:00"
+          "end": "08:15"
         },
         {
           "start": "12:45",
           "end": "13:30"
         },
         {
-          "start": "17:00",
+          "start": "17:15",
           "end": "18:00"
         }
       ],
       "vendredi": [
         {
           "start": "07:30",
-          "end": "08:00"
+          "end": "08:15"
         },
         {
           "start": "12:45",
           "end": "13:30"
         },
         {
-          "start": "17:00",
+          "start": "17:15",
           "end": "18:00"
         }
       ],
       "samedi": [
         {
           "start": "07:30",
-          "end": "08:00"
+          "end": "12:00"
         },
         {
-          "start": "12:45",
-          "end": "13:30"
-        },
-        {
-          "start": "17:00",
+          "start": "14:00",
           "end": "18:00"
         }
       ],
-      "dimanche": [
-        {
-          "start": "07:30",
-          "end": "08:00"
-        },
-        {
-          "start": "12:45",
-          "end": "13:30"
-        },
-        {
-          "start": "17:00",
-          "end": "18:00"
-        }
-      ]
+      "dimanche": []
     }
   },
   "takenSlots": [],
@@ -118,9 +101,9 @@
         "Taille 3"
       ],
       "stock": {
-        "Taille 1": null,
-        "Taille 2": 8,
-        "Taille 3": null
+        "Taille 1": 1,
+        "Taille 2": 2,
+        "Taille 3": 2
       }
     },
     {
@@ -131,8 +114,8 @@
         "Adulte"
       ],
       "stock": {
-        "Enfant": null,
-        "Adulte": null
+        "Enfant": 1,
+        "Adulte": 4
       }
     },
     {
@@ -144,9 +127,9 @@
         "M/L"
       ],
       "stock": {
-        "XS (enfant)": null,
-        "S/M": null,
-        "M/L": null
+        "XS (enfant)": 1,
+        "S/M": 2,
+        "M/L": 2
       }
     },
     {
@@ -159,13 +142,13 @@
       "id": "glaciere-mat",
       "name": "Glacière",
       "sizes": null,
-      "stock": 5
+      "stock": 3
     },
     {
       "id": "parasol-mat",
       "name": "Parasol",
       "sizes": null,
-      "stock": 5
+      "stock": 3
     }
   ],
   "groups": [
