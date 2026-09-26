@@ -171,15 +171,6 @@
         });
       } catch (e) { lines = []; }
 
-      var days = null;
-      if (retrait && retour){
-        var d1 = new Date(retrait);
-        var d2 = new Date(retour);
-        var diff = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
-        if (diff > 0) days = diff;
-      }
-      var tierIndex = getTierIndex(days);
-
       function idTotalQty(id){
         var t = 0;
         lines.forEach(function (l) { if (l.id === id) t += l.qty; });
@@ -205,6 +196,31 @@
       var selectedRetraitSlot = "";
       var selectedRetourSlot = "";
 
+      function resolveSlot(date, which){
+        if (!date) return "";
+        var slots = availableSlotsFor(date);
+        var current = which === "retrait" ? selectedRetraitSlot : selectedRetourSlot;
+        if (slots.indexOf(current) === -1) current = slots[0] || "";
+        if (which === "retrait") selectedRetraitSlot = current; else selectedRetourSlot = current;
+        return current;
+      }
+
+      function computeDays(){
+        if (!retrait || !retour) return null;
+        var retraitSlot = resolveSlot(retrait, "retrait");
+        var retourSlot = resolveSlot(retour, "retour");
+        if (retraitSlot && retourSlot){
+          var start = new Date(retrait + "T" + retraitSlot);
+          var end = new Date(retour + "T" + retourSlot);
+          var diffHours = (end - start) / (1000 * 60 * 60);
+          return diffHours > 0 ? Math.max(1, Math.ceil(diffHours / 24)) : null;
+        }
+        var d1 = new Date(retrait);
+        var d2 = new Date(retour);
+        var diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+        return diffDays >= 0 ? diffDays + 1 : null;
+      }
+
       function slotSelectHtml(id, date, which){
         if (!date) return '<p class="help" style="font-size:0.82rem;color:var(--ink-soft);margin:0;">Choisissez cette date sur la page précédente.</p>';
         var slots = availableSlotsFor(date);
@@ -213,9 +229,7 @@
           var body = encodeURIComponent("Bonjour Kit Lagon,\n\nAucun créneau n'est disponible le " + formatDate(date) + ". Avez-vous une autre possibilité ?\n\nMerci !");
           return '<p class="caution-note" style="margin:0;">Aucun créneau disponible ce jour — <a href="mailto:contact@kitlagon.re?subject=' + subject + '&body=' + body + '">nous contacter</a></p>';
         }
-        var current = which === "retrait" ? selectedRetraitSlot : selectedRetourSlot;
-        if (slots.indexOf(current) === -1) current = slots[0];
-        if (which === "retrait") selectedRetraitSlot = current; else selectedRetourSlot = current;
+        var current = resolveSlot(date, which);
         return '<select id="' + id + '">' + slots.map(function (t) {
           return '<option value="' + t + '"' + (t === current ? " selected" : "") + '>' + t + '</option>';
         }).join("") + '</select>';
@@ -231,6 +245,8 @@
       }
 
       function render(){
+        var days = computeDays();
+        var tierIndex = getTierIndex(days);
         var content = document.getElementById("content");
 
         if (lines.length === 0){
@@ -341,9 +357,9 @@
         }
 
         var slotRetraitEl = document.getElementById("slot-retrait");
-        if (slotRetraitEl) slotRetraitEl.addEventListener("change", function () { selectedRetraitSlot = this.value; });
+        if (slotRetraitEl) slotRetraitEl.addEventListener("change", function () { selectedRetraitSlot = this.value; render(); });
         var slotRetourEl = document.getElementById("slot-retour");
-        if (slotRetourEl) slotRetourEl.addEventListener("change", function () { selectedRetourSlot = this.value; });
+        if (slotRetourEl) slotRetourEl.addEventListener("change", function () { selectedRetourSlot = this.value; render(); });
 
         document.getElementById("send-btn").addEventListener("click", function () {
           var nom = document.getElementById("client-nom").value.trim();
